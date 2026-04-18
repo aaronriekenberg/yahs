@@ -8,6 +8,8 @@ written in Rust, inspired by nginx.
 | Feature | Status |
 |---|---|
 | Static file serving | ✅ |
+| Blocked paths (glob patterns → 404) | ✅ |
+| Per-path cache rules (glob → `Cache-Control: max-age`) | ✅ |
 | Precompressed files (zstd · brotli · gzip) | ✅ |
 | ETag / If-Modified-Since / If-None-Match | ✅ |
 | Byte-range requests | ✅ |
@@ -112,9 +114,50 @@ Serves files from a local directory.
 | `root` | *(required)* | Filesystem root directory |
 | `index` | `["index.html"]` | Index file names tried for directory requests |
 | `strip_prefix` | `true` | Remove location prefix before path lookup |
-| `cache_max_age_secs` | `3600` | `Cache-Control: max-age` value |
+| `cache_max_age_secs` | `3600` | `Cache-Control: max-age` fallback value |
+| `cache_rules` | `[]` | Ordered per-path cache rules (see below) |
+| `blocked_paths` | `[]` | Glob patterns for paths that return 404 (see below) |
 | `precompressed` | `true` | Serve `.zst` / `.br` / `.gz` variants when accepted |
 | `encodings` | `["zstd","brotli","gzip"]` | Encoding preference order |
+
+#### Blocked paths
+
+`blocked_paths` is a list of glob patterns matched against the request path
+relative to the location prefix (after percent-decoding, before filesystem
+lookup).  Any match returns **404 Not Found** immediately.
+
+Plain segment names without wildcards (e.g. `".git"`) automatically match at
+any depth — `".git"`, `"repo/.git"`, `"repo/.git/config"`, etc.  Patterns with
+wildcards follow standard glob syntax via the
+[globset](https://docs.rs/globset) crate.
+
+```toml
+[locations.handler]
+type          = "static_files"
+root          = "./www"
+blocked_paths = [".git", ".env", ".htaccess"]
+```
+
+#### Per-path cache rules
+
+`cache_rules` is an ordered list of `{pattern, max_age_secs}` entries.  The
+first matching rule wins; if nothing matches the request path falls back to
+`cache_max_age_secs`.
+
+```toml
+[locations.handler]
+type               = "static_files"
+root               = "./www"
+cache_max_age_secs = 3600        # 1 hour (default / fallback)
+
+[[locations.handler.cache_rules]]
+pattern      = "images/*.png"
+max_age_secs = 120               # 2 minutes
+
+[[locations.handler.cache_rules]]
+pattern      = "**/*.js"
+max_age_secs = 86400             # 1 day
+```
 
 ### `reverse_proxy`
 
