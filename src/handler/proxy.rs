@@ -116,7 +116,7 @@ impl Handler for ReverseProxyHandler {
             }
             if self
                 .config
-                .remove_headers
+                .remove_request_headers
                 .iter()
                 .any(|r| r.to_lowercase() == name_lower)
             {
@@ -134,7 +134,7 @@ impl Handler for ReverseProxyHandler {
         builder = builder.header("x-forwarded-for", client_ip);
 
         // Extra headers from config.
-        for (k, v) in &self.config.extra_headers {
+        for (k, v) in &self.config.extra_request_headers {
             if let (Ok(name), Ok(val)) = (
                 HeaderName::from_bytes(k.as_bytes()),
                 HeaderValue::from_str(v),
@@ -176,6 +176,10 @@ impl Handler for ReverseProxyHandler {
             }
             resp_builder = resp_builder.header(name, value);
         }
+        resp_builder = resp_builder.header(
+            hyper::header::CACHE_CONTROL,
+            format!("public, max-age={}", self.config.cache_max_age_secs),
+        );
 
         let final_resp = resp_builder
             .body(full_body(resp_bytes))

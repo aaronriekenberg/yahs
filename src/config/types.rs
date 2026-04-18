@@ -208,13 +208,17 @@ pub struct ReverseProxyConfig {
     #[serde(default = "default_keepalive_timeout")]
     pub tcp_keepalive_secs: u64,
 
+    /// Cache-Control max-age in seconds for proxied responses (0 = no caching).
+    #[serde(default = "default_proxy_cache_max_age")]
+    pub cache_max_age_secs: u64,
+
     /// Extra request headers to forward (or override).
-    #[serde(default)]
-    pub extra_headers: HashMap<String, String>,
+    #[serde(default, alias = "extra_headers")]
+    pub extra_request_headers: HashMap<String, String>,
 
     /// Request headers to remove before forwarding.
-    #[serde(default)]
-    pub remove_headers: Vec<String>,
+    #[serde(default, alias = "remove_headers")]
+    pub remove_request_headers: Vec<String>,
 }
 
 fn default_connect_timeout_ms() -> u64 {
@@ -227,6 +231,10 @@ fn default_request_timeout_ms() -> u64 {
 
 fn default_proxy_max_connection_pool_size() -> usize {
     32
+}
+
+fn default_proxy_cache_max_age() -> u64 {
+    0
 }
 
 /// An upstream cluster with one or more backends.

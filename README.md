@@ -129,8 +129,9 @@ Forwards requests to an upstream cluster.
 | `max_connection_pool_size` | `32` | Max idle pooled upstream connections per host |
 | `tcp_keepalive_enabled` | `false` | Enable TCP keepalive for upstream sockets |
 | `tcp_keepalive_secs` | `75` | Upstream TCP keepalive probe idle time |
-| `extra_headers` | `{}` | Headers injected into the forwarded request |
-| `remove_headers` | `[]` | Request headers stripped before forwarding |
+| `cache_max_age_secs` | `0` | `Cache-Control: max-age` value applied to proxied responses |
+| `extra_request_headers` | `{}` | Headers injected into the forwarded request |
+| `remove_request_headers` | `[]` | Request headers stripped before forwarding |
 
 ### `health`
 
