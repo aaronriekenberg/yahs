@@ -314,4 +314,89 @@ root = "{root}"
             _ => panic!("expected static_files handler"),
         }
     }
+
+    #[test]
+    fn test_error_files_absent_by_default() {
+        let cfg_content = r#"
+[server]
+bind = "127.0.0.1:0"
+
+[[locations]]
+path = "/health"
+
+[locations.handler]
+type = "health"
+"#;
+        let f = write_config(cfg_content);
+        let config = load_config(f.path()).unwrap();
+        assert!(config.error_files.is_none());
+    }
+
+    #[test]
+    fn test_error_files_partial_config() {
+        let client_error_file = tempfile::NamedTempFile::new().unwrap();
+        // Write a dummy HTML file to use as the client error file.
+        std::fs::write(client_error_file.path(), b"<h1>oops</h1>").unwrap();
+        let path = client_error_file.path().to_str().unwrap().to_owned();
+
+        let cfg_content = format!(
+            r#"
+[server]
+bind = "127.0.0.1:0"
+
+[[locations]]
+path = "/health"
+
+[locations.handler]
+type = "health"
+
+[error_files]
+client_error_file = "{path}"
+client_error_cache_max_age_secs = 3600
+"#
+        );
+        let f = write_config(&cfg_content);
+        let config = load_config(f.path()).unwrap();
+        let ef = config.error_files.as_ref().expect("error_files should be set");
+        assert_eq!(ef.client_error_file.as_deref(), Some(path.as_str()));
+        assert_eq!(ef.client_error_cache_max_age_secs, 3600);
+        assert!(ef.server_error_file.is_none());
+        assert_eq!(ef.server_error_cache_max_age_secs, 0);
+    }
+
+    #[test]
+    fn test_error_files_full_config() {
+        let client_file = tempfile::NamedTempFile::new().unwrap();
+        let server_file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(client_file.path(), b"<h1>4xx</h1>").unwrap();
+        std::fs::write(server_file.path(), b"<h1>5xx</h1>").unwrap();
+        let client_path = client_file.path().to_str().unwrap().to_owned();
+        let server_path = server_file.path().to_str().unwrap().to_owned();
+
+        let cfg_content = format!(
+            r#"
+[server]
+bind = "127.0.0.1:0"
+
+[[locations]]
+path = "/health"
+
+[locations.handler]
+type = "health"
+
+[error_files]
+client_error_file = "{client_path}"
+client_error_cache_max_age_secs = 60
+server_error_file = "{server_path}"
+server_error_cache_max_age_secs = 0
+"#
+        );
+        let f = write_config(&cfg_content);
+        let config = load_config(f.path()).unwrap();
+        let ef = config.error_files.as_ref().expect("error_files should be set");
+        assert_eq!(ef.client_error_file.as_deref(), Some(client_path.as_str()));
+        assert_eq!(ef.client_error_cache_max_age_secs, 60);
+        assert_eq!(ef.server_error_file.as_deref(), Some(server_path.as_str()));
+        assert_eq!(ef.server_error_cache_max_age_secs, 0);
+    }
 }

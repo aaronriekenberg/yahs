@@ -17,6 +17,35 @@ pub struct Config {
     /// Logging configuration.
     #[serde(default)]
     pub logging: LoggingConfig,
+
+    /// Optional custom error file configuration.
+    #[serde(default)]
+    pub error_files: Option<ErrorFilesConfig>,
+}
+
+/// Configuration for optional custom error-page files.
+///
+/// When a request returns a 4xx or 5xx response the server can substitute
+/// the body of a pre-configured HTML file in place of the default plain-text
+/// error message.  Both entries are fully optional; if omitted the default
+/// error response is returned unchanged.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ErrorFilesConfig {
+    /// Path to the file served for 4xx (client error) responses.
+    pub client_error_file: Option<String>,
+
+    /// Path to the file served for 5xx (server error) responses.
+    pub server_error_file: Option<String>,
+
+    /// `Cache-Control: max-age` in seconds for the client-error file.
+    /// Defaults to `0` (i.e. `no-store`).
+    #[serde(default)]
+    pub client_error_cache_max_age_secs: u64,
+
+    /// `Cache-Control: max-age` in seconds for the server-error file.
+    /// Defaults to `0` (i.e. `no-store`).
+    #[serde(default)]
+    pub server_error_cache_max_age_secs: u64,
 }
 
 /// Core server socket and limits configuration.
