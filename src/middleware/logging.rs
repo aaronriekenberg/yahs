@@ -1,7 +1,12 @@
+use std::collections::BTreeMap;
 use std::time::Instant;
 
 use chrono::Utc;
-use hyper::{Request, Response, body::Incoming};
+use hyper::{
+    HeaderMap, Request, Response,
+    body::Incoming,
+    header::{HeaderName, HeaderValue},
+};
 
 use crate::handler::BoxBody;
 use crate::logging::AccessLogRecord;
@@ -15,8 +20,7 @@ pub struct RequestContext {
     pub method: String,
     pub uri: String,
     pub http_version: String,
-    pub user_agent: Option<String>,
-    pub referer: Option<String>,
+    pub request_headers: BTreeMap<String, Vec<String>>,
 }
 
 impl RequestContext {
@@ -27,18 +31,7 @@ impl RequestContext {
         let method = req.method().to_string();
         let uri = req.uri().to_string();
         let http_version = format!("{:?}", req.version());
-
-        let user_agent = req
-            .headers()
-            .get(hyper::header::USER_AGENT)
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_owned());
-
-        let referer = req
-            .headers()
-            .get(hyper::header::REFERER)
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_owned());
+        let request_headers = collect_headers(req.headers());
 
         Self {
             request_id,
@@ -47,8 +40,7 @@ impl RequestContext {
             method,
             uri,
             http_version,
-            user_agent,
-            referer,
+            request_headers,
         }
     }
 
@@ -77,13 +69,30 @@ impl RequestContext {
             http_version: self.http_version.clone(),
             status: response.status().as_u16(),
             response_bytes,
-            duration_ms: AccessLogRecord::duration_ms_from(duration),
+            duration_ns: AccessLogRecord::duration_ns_from(duration),
+            request_headers: self.request_headers.clone(),
+            response_headers: collect_headers(response.headers()),
             upstream: upstream.map(|s| s.to_owned()),
             location: location.map(|s| s.to_owned()),
-            user_agent: self.user_agent.clone(),
-            referer: self.referer.clone(),
         };
 
         record.emit();
     }
+}
+
+fn collect_headers(headers: &HeaderMap<HeaderValue>) -> BTreeMap<String, Vec<String>> {
+    let mut out = BTreeMap::new();
+    for (name, value) in headers {
+        let key = header_name_to_string(name);
+        let val = value
+            .to_str()
+            .map(|s| s.to_owned())
+            .unwrap_or_else(|_| String::from_utf8_lossy(value.as_bytes()).to_string());
+        out.entry(key).or_insert_with(Vec::new).push(val);
+    }
+    out
+}
+
+fn header_name_to_string(name: &HeaderName) -> String {
+    name.as_str().to_owned()
 }

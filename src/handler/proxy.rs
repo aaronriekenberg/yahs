@@ -9,13 +9,13 @@ use hyper::{
     body::Incoming,
     header::{HeaderName, HeaderValue},
 };
-use hyper_util::client::legacy::Client;
+use hyper_util::client::legacy::{Client, connect::HttpConnector};
 use hyper_util::rt::TokioExecutor;
 use tracing::debug;
 
 use crate::config::{BackendConfig, LoadBalancingStrategy, ReverseProxyConfig, UpstreamConfig};
 use crate::error::AppError;
-use crate::handler::{Handler, HandlerResponse, full_body};
+use crate::handler::{BoxBody, Handler, HandlerResponse, full_body};
 use crate::server::state::AppState;
 
 /// Headers that must not be forwarded as-is.
@@ -35,6 +35,7 @@ pub struct ReverseProxyHandler {
     config: ReverseProxyConfig,
     location_prefix: String,
     upstream: Arc<UpstreamRuntime>,
+    client: Client<HttpConnector, BoxBody>,
 }
 
 impl ReverseProxyHandler {
@@ -44,10 +45,22 @@ impl ReverseProxyHandler {
         upstream_config: &UpstreamConfig,
     ) -> Self {
         let upstream = Arc::new(UpstreamRuntime::new(upstream_config));
+        let mut connector = HttpConnector::new();
+        if config.tcp_keepalive_enabled {
+            connector.set_keepalive(Some(Duration::from_secs(config.tcp_keepalive_secs)));
+        } else {
+            connector.set_keepalive(None);
+        }
+
+        let mut client_builder = Client::builder(TokioExecutor::new());
+        client_builder.pool_max_idle_per_host(config.max_connection_pool_size);
+        let client = client_builder.build(connector);
+
         Self {
             config,
             location_prefix,
             upstream,
+            client,
         }
     }
 }
@@ -134,15 +147,12 @@ impl Handler for ReverseProxyHandler {
             .body(Full::new(body_bytes).map_err(|e| match e {}).boxed())
             .map_err(|e| AppError::upstream(e.to_string()))?;
 
-        // Create a simple HTTP client.
-        let client: Client<_, _> = Client::builder(TokioExecutor::new()).build_http();
-
         let connect_timeout = Duration::from_millis(self.config.connect_timeout_ms);
         let request_timeout = Duration::from_millis(self.config.request_timeout_ms);
 
         let response = tokio::time::timeout(
             connect_timeout + request_timeout,
-            client.request(forward_req),
+            self.client.request(forward_req),
         )
         .await
         .map_err(|_| AppError::upstream("Request to upstream timed out"))?
