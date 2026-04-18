@@ -111,3 +111,15 @@ path = "/"
   precompressed    = true
   # Preference order: try zstd first, then brotli, then gzip.
   encodings        = ["zstd", "brotli", "gzip"]
+
+# ── Error files (optional) ─────────────────────────────────────────────────
+# When configured, requests that return 4xx or 5xx responses will have their
+# body replaced with the content of the specified HTML file.  Both entries
+# are optional; if omitted the default plain-text error response is returned.
+#
+# [error_files]
+# client_error_file = "./errors/4xx.html"
+# client_error_cache_max_age_secs = 0    # 0 = no-store (default)
+#
+# server_error_file = "./errors/5xx.html"
+# server_error_cache_max_age_secs = 0    # 0 = no-store (default)

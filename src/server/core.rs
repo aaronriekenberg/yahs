@@ -16,8 +16,9 @@ use crate::error::AppError;
 use crate::handler::health::HealthHandler;
 use crate::handler::proxy::ReverseProxyHandler;
 use crate::handler::static_files::StaticFilesHandler;
-use crate::handler::{BoxBody, Handler, HandlerResponse, error_response};
+use crate::handler::{BoxBody, Handler, HandlerResponse, error_file_response, error_response};
 use crate::middleware::logging::RequestContext;
+use crate::server::error_files::ErrorFileStore;
 use crate::server::state::AppState;
 
 /// Build the handler map from config.
@@ -68,6 +69,24 @@ fn match_location<'a>(
         .max_by_key(|loc| loc.path.len())
 }
 
+/// Replace a 4xx/5xx response with an error-file body when one is configured.
+fn maybe_replace_with_error_file(
+    resp: HandlerResponse,
+    store: &ErrorFileStore,
+) -> HandlerResponse {
+    let status = resp.status();
+    if status.is_client_error() {
+        if let Some(entry) = &store.client_error {
+            return error_file_response(status, entry);
+        }
+    } else if status.is_server_error() {
+        if let Some(entry) = &store.server_error {
+            return error_file_response(status, entry);
+        }
+    }
+    resp
+}
+
 /// Route a single request to the appropriate handler.
 async fn route_request(
     mut req: Request<Incoming>,
@@ -106,6 +125,9 @@ async fn route_request(
         },
         None => error_response(&AppError::NotFound),
     };
+
+    // Substitute custom error-file body for 4xx/5xx responses when configured.
+    let response = maybe_replace_with_error_file(response, &state.error_files);
 
     // Inject extra headers from the matched location.
     let response = inject_extra_headers(response, matched_location, &locations);
@@ -154,7 +176,8 @@ pub async fn run_server(config: Config) -> Result<()> {
     let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
     let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
 
-    let state = AppState::new(config.clone());
+    let error_files = ErrorFileStore::from_config(config.error_files.as_ref()).await?;
+    let state = AppState::new(config.clone(), error_files);
     let handlers = Arc::new(build_handlers(&config)?);
     let locations = Arc::new(config.locations.clone());
     let connection_limiter = if max_connections > 0 {

@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use bytes::Bytes;
 use http_body_util::Full;
-use hyper::{Request, Response, body::Incoming};
+use hyper::{Request, Response, StatusCode, body::Incoming};
 
 use crate::error::AppError;
+use crate::server::error_files::ErrorFileEntry;
 use crate::server::state::AppState;
 
 pub mod health;
@@ -45,5 +46,18 @@ pub fn error_response(error: &AppError) -> HandlerResponse {
         .status(status)
         .header(hyper::header::CONTENT_TYPE, "text/plain; charset=utf-8")
         .body(body)
+        .unwrap()
+}
+
+/// Build an HTML error-file response, preserving the original status code.
+pub fn error_file_response(status: StatusCode, entry: &ErrorFileEntry) -> HandlerResponse {
+    Response::builder()
+        .status(status)
+        .header(
+            hyper::header::CONTENT_TYPE,
+            "text/html; charset=utf-8",
+        )
+        .header(hyper::header::CACHE_CONTROL, entry.cache_control.as_str())
+        .body(full_body(entry.body.clone()))
         .unwrap()
 }
