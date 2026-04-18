@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use hyper::{Request, Response, StatusCode, body::Incoming, header};
 use tokio::io::AsyncReadExt;
@@ -11,7 +10,7 @@ use tracing::{debug, warn};
 use crate::compression::negotiate_encoding;
 use crate::config::StaticFilesConfig;
 use crate::error::AppError;
-use crate::handler::{Handler, HandlerResponse, empty_body, full_body};
+use crate::handler::{Handler, HandlerResponse, empty_body, stream_body};
 use crate::server::state::AppState;
 
 pub struct StaticFilesHandler {
@@ -249,8 +248,8 @@ impl StaticFilesHandler {
                 .await;
         }
 
-        // Read the entire file.
-        let data = tokio::fs::read(path)
+        // Open the file for streaming – no need to load it all into memory.
+        let file = tokio::fs::File::open(path)
             .await
             .map_err(|_| AppError::NotFound)?;
 
@@ -279,7 +278,7 @@ impl StaticFilesHandler {
         let body = if req.method() == hyper::Method::HEAD {
             empty_body()
         } else {
-            full_body(Bytes::from(data))
+            stream_body(file)
         };
 
         Ok(builder.body(body).unwrap())
@@ -355,10 +354,6 @@ impl StaticFilesHandler {
             .map_err(|e| AppError::internal(e.to_string()))?;
 
         let length = end - start + 1;
-        let mut buf = vec![0u8; length as usize];
-        file.read_exact(&mut buf)
-            .await
-            .map_err(|e| AppError::internal(e.to_string()))?;
 
         Ok(Response::builder()
             .status(StatusCode::PARTIAL_CONTENT)
@@ -370,7 +365,7 @@ impl StaticFilesHandler {
             )
             .header(header::ETAG, etag)
             .header(header::ACCEPT_RANGES, "bytes")
-            .body(full_body(Bytes::from(buf)))
+            .body(stream_body(file.take(length)))
             .unwrap())
     }
 }

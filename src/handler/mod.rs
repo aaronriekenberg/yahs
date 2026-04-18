@@ -30,6 +30,20 @@ pub fn full_body(data: impl Into<Bytes>) -> BoxBody {
     Full::new(data.into()).map_err(|e| match e {}).boxed()
 }
 
+/// Build a streaming `BoxBody` from any async reader (e.g. `tokio::fs::File`
+/// or `tokio::io::Take<tokio::fs::File>`).  Data is read and forwarded in
+/// chunks, so the full file contents never need to reside in memory at once.
+pub fn stream_body<R>(reader: R) -> BoxBody
+where
+    R: tokio::io::AsyncRead + Send + Sync + Unpin + 'static,
+{
+    use futures::StreamExt as _;
+    use hyper::body::Frame;
+    http_body_util::BodyExt::boxed(http_body_util::StreamBody::new(
+        tokio_util::io::ReaderStream::new(reader).map(|r| r.map(Frame::data)),
+    ))
+}
+
 /// Build an empty `BoxBody`.
 pub fn empty_body() -> BoxBody {
     use http_body_util::BodyExt;
