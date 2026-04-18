@@ -68,7 +68,7 @@ fn match_location<'a>(
 
 /// Route a single request to the appropriate handler.
 async fn route_request(
-    req: Request<Incoming>,
+    mut req: Request<Incoming>,
     state: AppState,
     handlers: Arc<HashMap<String, Arc<dyn Handler>>>,
     locations: Arc<Vec<LocationConfig>>,
@@ -88,6 +88,9 @@ async fn route_request(
         }
         None => (None, None),
     };
+
+    // Attach the remote addr as a request extension so handlers (e.g. proxy) can read it.
+    req.extensions_mut().insert(remote_addr.clone());
 
     let response = match handler {
         Some(h) => match h.handle(req, &state).await {

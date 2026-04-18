@@ -112,8 +112,13 @@ impl Handler for ReverseProxyHandler {
             builder = builder.header(name, value);
         }
 
-        // Inject X-Forwarded-For.
-        builder = builder.header("x-forwarded-for", "unknown");
+        // Inject X-Forwarded-For using the actual client IP from the request extension.
+        let client_ip = parts
+            .extensions
+            .get::<String>()
+            .map(|s| s.split(':').next().unwrap_or(s).to_owned())
+            .unwrap_or_else(|| "unknown".to_owned());
+        builder = builder.header("x-forwarded-for", client_ip);
 
         // Extra headers from config.
         for (k, v) in &self.config.extra_headers {
@@ -203,7 +208,7 @@ impl UpstreamRuntime {
                 self.backends[idx].clone()
             }
             Random => {
-                let idx = (rand_usize()) % self.backends.len();
+                let idx = (next_counter()) % self.backends.len();
                 self.backends[idx].clone()
             }
             IpHash => {
@@ -215,8 +220,8 @@ impl UpstreamRuntime {
     }
 }
 
-/// Simple PRNG-free "random" using a relaxed atomic tick.
-fn rand_usize() -> usize {
+/// Monotonically increasing counter used for pseudo-random backend selection.
+fn next_counter() -> usize {
     static COUNTER: AtomicUsize = AtomicUsize::new(1);
     COUNTER.fetch_add(1, Ordering::Relaxed)
 }

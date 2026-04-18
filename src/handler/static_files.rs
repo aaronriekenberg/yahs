@@ -73,7 +73,8 @@ impl Handler for StaticFilesHandler {
             .and_then(|v| v.to_str().ok())
             .map(|s| s.to_owned());
 
-        // Try to serve a precompressed variant first.
+        // Try to serve a precompressed variant first when the feature is enabled
+        // and the client advertises an acceptable encoding.
         if self.config.precompressed
             && let Some(encoding) =
                 negotiate_encoding(accept_encoding.as_deref(), &self.config.encodings)
