@@ -21,8 +21,6 @@ pub struct RequestContext {
     pub uri: String,
     pub http_version: String,
     pub request_headers: BTreeMap<String, Vec<String>>,
-    pub user_agent: Option<String>,
-    pub referer: Option<String>,
 }
 
 impl RequestContext {
@@ -35,18 +33,6 @@ impl RequestContext {
         let http_version = format!("{:?}", req.version());
         let request_headers = collect_headers(req.headers());
 
-        let user_agent = req
-            .headers()
-            .get(hyper::header::USER_AGENT)
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_owned());
-
-        let referer = req
-            .headers()
-            .get(hyper::header::REFERER)
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_owned());
-
         Self {
             request_id,
             start,
@@ -55,8 +41,6 @@ impl RequestContext {
             uri,
             http_version,
             request_headers,
-            user_agent,
-            referer,
         }
     }
 
@@ -90,8 +74,6 @@ impl RequestContext {
             response_headers: collect_headers(response.headers()),
             upstream: upstream.map(|s| s.to_owned()),
             location: location.map(|s| s.to_owned()),
-            user_agent: self.user_agent.clone(),
-            referer: self.referer.clone(),
         };
 
         record.emit();

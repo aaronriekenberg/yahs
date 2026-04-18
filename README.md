@@ -182,8 +182,7 @@ Every request emits a JSON line to stdout at `INFO` level:
   "response_headers": {
     "content-type": ["text/html"]
   },
-  "location": "/static",
-  "user_agent": "curl/8.0"
+  "location": "/static"
 }
 ```
 

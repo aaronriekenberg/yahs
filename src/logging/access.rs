@@ -45,14 +45,6 @@ pub struct AccessLogRecord {
     /// Matched location path.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-
-    /// Value of the `User-Agent` request header.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_agent: Option<String>,
-
-    /// Value of the `Referer` request header.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub referer: Option<String>,
 }
 
 impl AccessLogRecord {

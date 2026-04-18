@@ -185,7 +185,16 @@ pub async fn run_server(config: Config) -> Result<()> {
                 let locations = locations.clone();
                 let remote_addr = peer_addr.to_string();
                 let connection_permit = if let Some(limiter) = &connection_limiter {
-                    Some(limiter.clone().acquire_owned().await?)
+                    match limiter.clone().try_acquire_owned() {
+                        Ok(permit) => Some(permit),
+                        Err(_) => {
+                            error!(
+                                "Max connections reached ({}), closing incoming connection from {}",
+                                max_connections, remote_addr
+                            );
+                            continue;
+                        }
+                    }
                 } else {
                     None
                 };
