@@ -1,0 +1,222 @@
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
+
+use async_trait::async_trait;
+use http_body_util::{BodyExt, Full};
+use hyper::{
+    Request, Response, Uri,
+    body::Incoming,
+    header::{HeaderName, HeaderValue},
+};
+use hyper_util::client::legacy::Client;
+use hyper_util::rt::TokioExecutor;
+use tracing::debug;
+
+use crate::config::{BackendConfig, LoadBalancingStrategy, ReverseProxyConfig, UpstreamConfig};
+use crate::error::AppError;
+use crate::handler::{Handler, HandlerResponse, full_body};
+use crate::server::state::AppState;
+
+/// Headers that must not be forwarded as-is.
+static HOP_BY_HOP: &[&str] = &[
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+];
+
+/// Reverse proxy handler.
+pub struct ReverseProxyHandler {
+    config: ReverseProxyConfig,
+    location_prefix: String,
+    upstream: Arc<UpstreamRuntime>,
+}
+
+impl ReverseProxyHandler {
+    pub fn new(
+        config: ReverseProxyConfig,
+        location_prefix: String,
+        upstream_config: &UpstreamConfig,
+    ) -> Self {
+        let upstream = Arc::new(UpstreamRuntime::new(upstream_config));
+        Self {
+            config,
+            location_prefix,
+            upstream,
+        }
+    }
+}
+
+#[async_trait]
+impl Handler for ReverseProxyHandler {
+    async fn handle(
+        &self,
+        req: Request<Incoming>,
+        _state: &AppState,
+    ) -> Result<HandlerResponse, AppError> {
+        let backend_url = self.upstream.next_backend();
+        debug!("Proxying {} {} → {}", req.method(), req.uri(), backend_url);
+
+        // Build the forwarded URI.
+        let forwarded_path = if self.config.strip_prefix {
+            let stripped = req
+                .uri()
+                .path()
+                .strip_prefix(&self.location_prefix)
+                .unwrap_or(req.uri().path());
+            if stripped.is_empty() { "/" } else { stripped }
+        } else {
+            req.uri().path()
+        };
+
+        let query = req
+            .uri()
+            .query()
+            .map(|q| format!("?{}", q))
+            .unwrap_or_default();
+        let target_uri: Uri = format!("{}{}{}", backend_url, forwarded_path, query)
+            .parse()
+            .map_err(|e: hyper::http::uri::InvalidUri| AppError::upstream(e.to_string()))?;
+
+        // Build forwarded request.
+        let (parts, body) = req.into_parts();
+
+        // Collect the incoming body.
+        let body_bytes = body
+            .collect()
+            .await
+            .map_err(|e| AppError::upstream(e.to_string()))?
+            .to_bytes();
+
+        let mut builder = Request::builder().method(parts.method).uri(target_uri);
+
+        // Copy headers, removing hop-by-hop and applying removes/overrides.
+        for (name, value) in &parts.headers {
+            let name_lower = name.as_str().to_lowercase();
+            if HOP_BY_HOP.contains(&name_lower.as_str()) {
+                continue;
+            }
+            if self
+                .config
+                .remove_headers
+                .iter()
+                .any(|r| r.to_lowercase() == name_lower)
+            {
+                continue;
+            }
+            builder = builder.header(name, value);
+        }
+
+        // Inject X-Forwarded-For.
+        builder = builder.header("x-forwarded-for", "unknown");
+
+        // Extra headers from config.
+        for (k, v) in &self.config.extra_headers {
+            if let (Ok(name), Ok(val)) = (
+                HeaderName::from_bytes(k.as_bytes()),
+                HeaderValue::from_str(v),
+            ) {
+                builder = builder.header(name, val);
+            }
+        }
+
+        let forward_req = builder
+            .body(Full::new(body_bytes).map_err(|e| match e {}).boxed())
+            .map_err(|e| AppError::upstream(e.to_string()))?;
+
+        // Create a simple HTTP client.
+        let client: Client<_, _> = Client::builder(TokioExecutor::new()).build_http();
+
+        let connect_timeout = Duration::from_millis(self.config.connect_timeout_ms);
+        let request_timeout = Duration::from_millis(self.config.request_timeout_ms);
+
+        let response = tokio::time::timeout(
+            connect_timeout + request_timeout,
+            client.request(forward_req),
+        )
+        .await
+        .map_err(|_| AppError::upstream("Request to upstream timed out"))?
+        .map_err(|e| AppError::upstream(e.to_string()))?;
+
+        // Convert the upstream response.
+        let (resp_parts, resp_body) = response.into_parts();
+
+        let resp_bytes = tokio::time::timeout(request_timeout, resp_body.collect())
+            .await
+            .map_err(|_| AppError::upstream("Reading upstream body timed out"))?
+            .map_err(|e| AppError::upstream(e.to_string()))?
+            .to_bytes();
+
+        let mut resp_builder = Response::builder().status(resp_parts.status);
+
+        for (name, value) in &resp_parts.headers {
+            let name_lower = name.as_str().to_lowercase();
+            if HOP_BY_HOP.contains(&name_lower.as_str()) {
+                continue;
+            }
+            resp_builder = resp_builder.header(name, value);
+        }
+
+        let final_resp = resp_builder
+            .body(full_body(resp_bytes))
+            .map_err(|e| AppError::upstream(e.to_string()))?;
+
+        Ok(final_resp)
+    }
+}
+
+// ── upstream load balancing ───────────────────────────────────────────────
+
+struct UpstreamRuntime {
+    backends: Vec<String>,
+    strategy: LoadBalancingStrategy,
+    counter: AtomicUsize,
+}
+
+impl UpstreamRuntime {
+    fn new(config: &UpstreamConfig) -> Self {
+        let backends: Vec<String> = config
+            .backends
+            .iter()
+            .flat_map(|b: &BackendConfig| {
+                std::iter::repeat_n(b.url.trim_end_matches('/').to_owned(), b.weight as usize)
+            })
+            .collect();
+
+        Self {
+            backends,
+            strategy: config.strategy,
+            counter: AtomicUsize::new(0),
+        }
+    }
+
+    fn next_backend(&self) -> String {
+        use LoadBalancingStrategy::*;
+        match self.strategy {
+            RoundRobin => {
+                let idx = self.counter.fetch_add(1, Ordering::Relaxed) % self.backends.len();
+                self.backends[idx].clone()
+            }
+            Random => {
+                let idx = (rand_usize()) % self.backends.len();
+                self.backends[idx].clone()
+            }
+            IpHash => {
+                // Fallback to round-robin when no IP is available at this layer.
+                let idx = self.counter.fetch_add(1, Ordering::Relaxed) % self.backends.len();
+                self.backends[idx].clone()
+            }
+        }
+    }
+}
+
+/// Simple PRNG-free "random" using a relaxed atomic tick.
+fn rand_usize() -> usize {
+    static COUNTER: AtomicUsize = AtomicUsize::new(1);
+    COUNTER.fetch_add(1, Ordering::Relaxed)
+}
