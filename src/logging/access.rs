@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::{collections::BTreeMap, time::Duration};
-use tracing::warn;
+use tracing::{info, warn};
 
 /// A single structured access log entry.
 #[derive(Debug, Serialize)]
@@ -56,7 +56,7 @@ impl AccessLogRecord {
     /// Emit this record as a structured JSON log line.
     pub fn emit(&self) {
         match self.to_json_line() {
-            Ok(json) => println!("{json}"),
+            Ok(json) => info!(target: "access", "{}", json),
             Err(e) => warn!("Failed to serialize access log record: {}", e),
         }
     }
