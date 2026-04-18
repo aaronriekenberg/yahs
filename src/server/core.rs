@@ -150,7 +150,7 @@ pub async fn run_server(config: Config) -> Result<()> {
     let bind_addr = config.server.bind.clone();
     let access_log_enabled = config.logging.access_log;
     let max_connections = config.server.max_connections;
-    let keepalive_timeout = Duration::from_secs(config.server.keepalive_timeout_secs);
+    let http_keepalive_timeout = Duration::from_secs(config.server.http_keepalive_timeout_secs);
     let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
     let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
 
@@ -214,13 +214,13 @@ pub async fn run_server(config: Config) -> Result<()> {
                     conn_builder
                         .http1()
                         .timer(hyper_util::rt::TokioTimer::new())
-                        .keep_alive(keepalive_timeout.as_secs() > 0);
-                    if keepalive_timeout.as_secs() > 0 {
+                        .keep_alive(http_keepalive_timeout.as_secs() > 0);
+                    if http_keepalive_timeout.as_secs() > 0 {
                         conn_builder
                             .http2()
                             .timer(hyper_util::rt::TokioTimer::new())
-                            .keep_alive_interval(Some(keepalive_timeout))
-                            .keep_alive_timeout(keepalive_timeout);
+                            .keep_alive_interval(Some(http_keepalive_timeout))
+                            .keep_alive_timeout(http_keepalive_timeout);
                     } else {
                         conn_builder
                             .http2()

@@ -15,8 +15,8 @@ server_name = "yahs/0.1"
 # Maximum simultaneous connections (0 = unlimited).
 max_connections = 0
 
-# Idle keepalive timeout in seconds.
-keepalive_timeout_secs = 75
+# HTTP idle keepalive timeout in seconds.
+http_keepalive_timeout_secs = 75
 
 # Enable TCP keepalive probes on accepted client connections.
 tcp_keepalive_enabled = false

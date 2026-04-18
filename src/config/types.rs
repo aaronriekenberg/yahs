@@ -33,9 +33,9 @@ pub struct ServerConfig {
     #[serde(default)]
     pub max_connections: u32,
 
-    /// Keepalive timeout in seconds.
+    /// HTTP keepalive timeout in seconds.
     #[serde(default = "default_keepalive_timeout")]
-    pub keepalive_timeout_secs: u64,
+    pub http_keepalive_timeout_secs: u64,
 
     /// Enable TCP keepalive probes on accepted client connections.
     #[serde(default)]
