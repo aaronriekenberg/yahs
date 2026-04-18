@@ -240,4 +240,78 @@ type = "health"
         let result = load_config(f.path());
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_static_files_blocked_paths_and_cache_rules_config() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().to_str().unwrap().to_owned();
+        let cfg_content = format!(
+            r#"
+[server]
+bind = "127.0.0.1:8080"
+
+[[locations]]
+path = "/static"
+
+[locations.handler]
+type = "static_files"
+root = "{root}"
+cache_max_age_secs = 3600
+blocked_paths = [".git", ".env"]
+
+[[locations.handler.cache_rules]]
+pattern = "images/*.png"
+max_age_secs = 120
+
+[[locations.handler.cache_rules]]
+pattern = "**/*.js"
+max_age_secs = 86400
+"#,
+            root = root
+        );
+        let f = write_config(&cfg_content);
+        let config = load_config(f.path()).unwrap();
+        match &config.locations[0].handler {
+            yahs::config::HandlerConfig::StaticFiles(sf) => {
+                assert_eq!(sf.cache_max_age_secs, 3600);
+                assert_eq!(sf.blocked_paths, vec![".git", ".env"]);
+                assert_eq!(sf.cache_rules.len(), 2);
+                assert_eq!(sf.cache_rules[0].pattern, "images/*.png");
+                assert_eq!(sf.cache_rules[0].max_age_secs, 120);
+                assert_eq!(sf.cache_rules[1].pattern, "**/*.js");
+                assert_eq!(sf.cache_rules[1].max_age_secs, 86400);
+            }
+            _ => panic!("expected static_files handler"),
+        }
+    }
+
+    #[test]
+    fn test_static_files_defaults_have_empty_blocked_and_cache_rules() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().to_str().unwrap().to_owned();
+        let cfg_content = format!(
+            r#"
+[server]
+bind = "127.0.0.1:8080"
+
+[[locations]]
+path = "/"
+
+[locations.handler]
+type = "static_files"
+root = "{root}"
+"#,
+            root = root
+        );
+        let f = write_config(&cfg_content);
+        let config = load_config(f.path()).unwrap();
+        match &config.locations[0].handler {
+            yahs::config::HandlerConfig::StaticFiles(sf) => {
+                assert!(sf.blocked_paths.is_empty());
+                assert!(sf.cache_rules.is_empty());
+                assert_eq!(sf.cache_max_age_secs, 3600); // default
+            }
+            _ => panic!("expected static_files handler"),
+        }
+    }
 }

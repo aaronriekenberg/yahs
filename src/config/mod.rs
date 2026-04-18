@@ -3,6 +3,6 @@ mod types;
 
 pub use loader::load_config;
 pub use types::{
-    BackendConfig, Config, HandlerConfig, LoadBalancingStrategy, LocationConfig,
+    BackendConfig, CacheRule, Config, HandlerConfig, LoadBalancingStrategy, LocationConfig,
     PrecompressedEncoding, ReverseProxyConfig, StaticFilesConfig, UpstreamConfig,
 };

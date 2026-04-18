@@ -92,6 +92,21 @@ path = "/"
   strip_prefix     = true
   cache_max_age_secs = 3600
 
+  # Paths blocked with 404 (glob patterns matched against the path relative to
+  # the location prefix).  A plain name like ".git" also matches any path
+  # segment, e.g. "repo/.git/config".
+  blocked_paths = [".git", ".env", ".htaccess"]
+
+  # Per-path cache rules — first matching rule wins.
+  # Patterns are globs matched against the path relative to the location prefix.
+  [[locations.handler.cache_rules]]
+  pattern      = "images/*.png"
+  max_age_secs = 120        # 2 minutes
+
+  [[locations.handler.cache_rules]]
+  pattern      = "**/*.js"
+  max_age_secs = 86400      # 1 day
+
   # Serve precompressed files when the client accepts them.
   precompressed    = true
   # Preference order: try zstd first, then brotli, then gzip.
