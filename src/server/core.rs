@@ -202,15 +202,21 @@ pub async fn run_server(config: Config) -> Result<()> {
                     let mut conn_builder = hyper_util::server::conn::auto::Builder::new(
                         hyper_util::rt::TokioExecutor::new(),
                     );
-                    conn_builder.timer(hyper_util::rt::TokioTimer::new());
-                    conn_builder.http1().keep_alive(keepalive_timeout.as_secs() > 0);
+                    conn_builder
+                        .http1()
+                        .timer(hyper_util::rt::TokioTimer::new())
+                        .keep_alive(keepalive_timeout.as_secs() > 0);
                     if keepalive_timeout.as_secs() > 0 {
                         conn_builder
                             .http2()
+                            .timer(hyper_util::rt::TokioTimer::new())
                             .keep_alive_interval(Some(keepalive_timeout))
                             .keep_alive_timeout(keepalive_timeout);
                     } else {
-                        conn_builder.http2().keep_alive_interval(None);
+                        conn_builder
+                            .http2()
+                            .timer(hyper_util::rt::TokioTimer::new())
+                            .keep_alive_interval(None);
                     }
 
                     let service = hyper::service::service_fn(move |req| {
