@@ -19,6 +19,7 @@ written in Rust, inspired by nginx.
 | Reused reverse-proxy client connection pool | ✅ |
 | Configurable TCP keepalive (server + proxy upstream) | ✅ |
 | Health / readiness endpoint | ✅ |
+| Custom HTML error pages (4xx / 5xx) | ✅ |
 | Structured JSON access logs | ✅ |
 | Per-request correlation IDs | ✅ |
 | Graceful shutdown (SIGTERM / Ctrl-C) | ✅ |
@@ -89,7 +90,8 @@ src/
 ├── config/          TOML config types, loader, and validation
 ├── server/
 │   ├── core.rs      TCP listener, request router, graceful shutdown
-│   └── state.rs     Shared AppState (Arc<Config>)
+│   ├── error_files.rs  Pre-loaded error-file store (4xx / 5xx HTML bodies)
+│   └── state.rs     Shared AppState (Arc<Config> + Arc<ErrorFileStore>)
 ├── handler/
 │   ├── mod.rs       Handler trait + response helpers
 │   ├── static_files.rs  Static file server
@@ -180,7 +182,38 @@ Forwards requests to an upstream cluster.
 
 Returns `{"status":"ok","version":"…"}` as JSON.  No configuration needed.
 
-## Load balancing strategies
+## Custom error files
+
+yahs can serve a pre-loaded HTML file in place of the default plain-text body
+for any 4xx (client error) or 5xx (server error) response, regardless of which
+handler produced the error.  Files are read once at startup — the server will
+refuse to start if a configured path is missing or unreadable.
+
+The original HTTP status code is always preserved (e.g. `404 Not Found` stays
+`404`), so clients and logs can still distinguish individual error types.
+
+```toml
+[error_files]
+# Served for any 4xx response.
+client_error_file = "./errors/4xx.html"
+client_error_cache_max_age_secs = 0    # 0 → no-store (default)
+
+# Served for any 5xx response.
+server_error_file = "./errors/5xx.html"
+server_error_cache_max_age_secs = 0    # 0 → no-store (default)
+```
+
+Both keys are optional.  Omitting the whole `[error_files]` section (or either
+key within it) leaves the corresponding error responses unchanged.
+
+| Key | Default | Description |
+|---|---|---|
+| `client_error_file` | *(none)* | Path to an HTML file served for 4xx responses |
+| `server_error_file` | *(none)* | Path to an HTML file served for 5xx responses |
+| `client_error_cache_max_age_secs` | `0` | `Cache-Control: no-store` when `0`, else `public, max-age=N` |
+| `server_error_cache_max_age_secs` | `0` | `Cache-Control: no-store` when `0`, else `public, max-age=N` |
+
+
 
 | Strategy | Description |
 |---|---|
