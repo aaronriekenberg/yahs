@@ -3,6 +3,7 @@ use std::time::SystemTime;
 
 use async_trait::async_trait;
 use bytes::Bytes;
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use hyper::{Request, Response, StatusCode, body::Incoming, header};
 use tokio::io::AsyncReadExt;
 use tracing::{debug, warn};
@@ -19,6 +20,10 @@ pub struct StaticFilesHandler {
     root: PathBuf,
     /// Location prefix this handler was registered under.
     location_prefix: String,
+    /// Compiled glob set for blocked paths (returns 404 on match).
+    blocked_set: GlobSet,
+    /// Compiled glob sets for cache rules (parallel to `config.cache_rules`).
+    cache_rule_sets: Vec<GlobSet>,
 }
 
 impl StaticFilesHandler {
@@ -26,10 +31,23 @@ impl StaticFilesHandler {
         let root = std::fs::canonicalize(&config.root).map_err(|e| {
             anyhow::anyhow!("Cannot canonicalize static root '{}': {}", config.root, e)
         })?;
+
+        // Pre-compile blocked-paths glob set.
+        let blocked_set = build_glob_set(&config.blocked_paths)?;
+
+        // Pre-compile one GlobSet per cache rule.
+        let cache_rule_sets = config
+            .cache_rules
+            .iter()
+            .map(|rule| build_glob_set(std::slice::from_ref(&rule.pattern)))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
         Ok(Self {
             config,
             root,
             location_prefix,
+            blocked_set,
+            cache_rule_sets,
         })
     }
 }
@@ -61,6 +79,12 @@ impl Handler for StaticFilesHandler {
             uri_path
         };
 
+        // Reject blocked paths before touching the filesystem.
+        let decoded_rel = percent_decode(rel_path);
+        if self.blocked_set.is_match(decoded_rel.trim_start_matches('/')) {
+            return Err(AppError::NotFound);
+        }
+
         // Resolve securely to an absolute path under root.
         let file_path = self.resolve_path(rel_path)?;
 
@@ -87,13 +111,14 @@ impl Handler for StaticFilesHandler {
                         &compressed_path,
                         Some(encoding.content_encoding()),
                         detect_mime(&file_path),
+                        rel_path,
                     )
                     .await;
             }
         }
 
         // Fall back to the uncompressed file.
-        self.serve_file(&req, &file_path, None, detect_mime(&file_path))
+        self.serve_file(&req, &file_path, None, detect_mime(&file_path), rel_path)
             .await
     }
 }
@@ -146,23 +171,24 @@ impl StaticFilesHandler {
         path: &Path,
         content_encoding: Option<&str>,
         content_type: &str,
+        rel_path: &str,
     ) -> Result<HandlerResponse, AppError> {
         let metadata = match tokio::fs::metadata(path).await {
             Ok(m) => m,
             Err(_) => {
-                return self.serve_index_or_404(req, path, content_encoding).await;
+                return self.serve_index_or_404(req, path, content_encoding, rel_path).await;
             }
         };
 
         if metadata.is_dir() {
-            return self.serve_index_or_404(req, path, content_encoding).await;
+            return self.serve_index_or_404(req, path, content_encoding, rel_path).await;
         }
 
         if !metadata.is_file() {
             return Err(AppError::NotFound);
         }
 
-        self.serve_regular_file(req, path, content_encoding, content_type)
+        self.serve_regular_file(req, path, content_encoding, content_type, rel_path)
             .await
     }
 
@@ -173,6 +199,7 @@ impl StaticFilesHandler {
         path: &Path,
         content_encoding: Option<&str>,
         content_type: &str,
+        rel_path: &str,
     ) -> Result<HandlerResponse, AppError> {
         let metadata = tokio::fs::metadata(path)
             .await
@@ -227,6 +254,8 @@ impl StaticFilesHandler {
             .await
             .map_err(|_| AppError::NotFound)?;
 
+        let cache_max_age = self.effective_cache_max_age(rel_path);
+
         let mut builder = Response::builder()
             .status(StatusCode::OK)
             .header(header::CONTENT_TYPE, content_type)
@@ -235,7 +264,7 @@ impl StaticFilesHandler {
             .header(header::ACCEPT_RANGES, "bytes")
             .header(
                 header::CACHE_CONTROL,
-                format!("public, max-age={}", self.config.cache_max_age_secs),
+                format!("public, max-age={}", cache_max_age),
             )
             .header(header::VARY, "Accept-Encoding");
 
@@ -262,6 +291,7 @@ impl StaticFilesHandler {
         req: &Request<Incoming>,
         dir_path: &Path,
         content_encoding: Option<&str>,
+        rel_path: &str,
     ) -> Result<HandlerResponse, AppError> {
         let dir_path = if dir_path.is_file() {
             dir_path.parent().unwrap_or(dir_path)
@@ -274,12 +304,24 @@ impl StaticFilesHandler {
             if index_path.is_file() {
                 let mime = detect_mime(&index_path);
                 return self
-                    .serve_regular_file(req, &index_path, content_encoding, mime)
+                    .serve_regular_file(req, &index_path, content_encoding, mime, rel_path)
                     .await;
             }
         }
 
         Err(AppError::NotFound)
+    }
+
+    /// Return the effective `max-age` for the given relative path.
+    /// The first matching `cache_rules` entry wins; falls back to `cache_max_age_secs`.
+    fn effective_cache_max_age(&self, rel_path: &str) -> u64 {
+        let path = rel_path.trim_start_matches('/');
+        for (i, rule_set) in self.cache_rule_sets.iter().enumerate() {
+            if rule_set.is_match(path) {
+                return self.config.cache_rules[i].max_age_secs;
+            }
+        }
+        self.config.cache_max_age_secs
     }
 
     /// Serve a byte-range subset of a file.
@@ -334,6 +376,27 @@ impl StaticFilesHandler {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+/// Build a `GlobSet` from a slice of pattern strings.
+/// Each pattern is matched case-sensitively.  Patterns without a `/` are
+/// automatically treated as path-component substring matches by wrapping them
+/// in `**/<pattern>/**` and `**/<pattern>` forms so that e.g. `".git"` blocks
+/// any path segment named `.git`.
+fn build_glob_set(patterns: &[String]) -> anyhow::Result<GlobSet> {
+    let mut builder = GlobSetBuilder::new();
+    for pattern in patterns {
+        // If the pattern has no path separator and no wildcard, treat it as a
+        // path-component match: block any path that *contains* the segment.
+        if !pattern.contains('/') && !pattern.contains('*') && !pattern.contains('?') {
+            builder.add(Glob::new(&format!("**/{pattern}"))?);
+            builder.add(Glob::new(&format!("**/{pattern}/**"))?);
+            builder.add(Glob::new(pattern)?);
+        } else {
+            builder.add(Glob::new(pattern)?);
+        }
+    }
+    Ok(builder.build()?)
+}
 
 fn detect_mime(path: &Path) -> &'static str {
     mime_guess::from_path(path)
@@ -418,5 +481,110 @@ fn parse_range(header: &str, file_size: u64) -> Option<(u64, u64)> {
             end_str.trim().parse().ok()?
         };
         Some((start, end))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{CacheRule, StaticFilesConfig};
+
+    fn make_handler(
+        tmp_root: &std::path::Path,
+        blocked_paths: Vec<String>,
+        cache_rules: Vec<CacheRule>,
+        cache_max_age_secs: u64,
+    ) -> StaticFilesHandler {
+        let config = StaticFilesConfig {
+            root: tmp_root.to_str().unwrap().to_owned(),
+            index: vec!["index.html".to_owned()],
+            strip_prefix: true,
+            cache_max_age_secs,
+            cache_rules,
+            blocked_paths,
+            precompressed: false,
+            encodings: vec![],
+        };
+        StaticFilesHandler::new(config, "/static".to_owned()).unwrap()
+    }
+
+    // ── blocked_paths ────────────────────────────────────────────────────────
+
+    #[test]
+    fn blocked_path_plain_segment_is_blocked() {
+        let tmp = tempfile::tempdir().unwrap();
+        let handler = make_handler(tmp.path(), vec![".git".to_owned()], vec![], 3600);
+        // Bare segment
+        assert!(handler.blocked_set.is_match(".git"));
+        // Nested
+        assert!(handler.blocked_set.is_match("repo/.git"));
+        assert!(handler.blocked_set.is_match("repo/.git/config"));
+    }
+
+    #[test]
+    fn blocked_path_glob_pattern_is_blocked() {
+        let tmp = tempfile::tempdir().unwrap();
+        let handler = make_handler(tmp.path(), vec!["**/.env".to_owned()], vec![], 3600);
+        assert!(handler.blocked_set.is_match("subdir/.env"));
+        assert!(!handler.blocked_set.is_match("subdir/app.env")); // different name
+    }
+
+    #[test]
+    fn blocked_path_unrelated_path_is_not_blocked() {
+        let tmp = tempfile::tempdir().unwrap();
+        let handler = make_handler(tmp.path(), vec![".git".to_owned()], vec![], 3600);
+        assert!(!handler.blocked_set.is_match("index.html"));
+        assert!(!handler.blocked_set.is_match("images/logo.png"));
+    }
+
+    #[test]
+    fn empty_blocked_paths_blocks_nothing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let handler = make_handler(tmp.path(), vec![], vec![], 3600);
+        assert!(!handler.blocked_set.is_match(".git"));
+        assert!(!handler.blocked_set.is_match("secret/.env"));
+    }
+
+    // ── effective_cache_max_age ──────────────────────────────────────────────
+
+    #[test]
+    fn cache_rule_first_match_wins() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rules = vec![
+            CacheRule {
+                pattern: "images/*.png".to_owned(),
+                max_age_secs: 120,
+            },
+            CacheRule {
+                pattern: "**/*.js".to_owned(),
+                max_age_secs: 86400,
+            },
+        ];
+        let handler = make_handler(tmp.path(), vec![], rules, 3600);
+
+        assert_eq!(handler.effective_cache_max_age("images/logo.png"), 120);
+        assert_eq!(handler.effective_cache_max_age("/images/logo.png"), 120);
+        assert_eq!(handler.effective_cache_max_age("app.js"), 86400);
+        assert_eq!(handler.effective_cache_max_age("js/bundle.js"), 86400);
+    }
+
+    #[test]
+    fn cache_rule_fallback_to_default() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rules = vec![CacheRule {
+            pattern: "images/*.png".to_owned(),
+            max_age_secs: 120,
+        }];
+        let handler = make_handler(tmp.path(), vec![], rules, 3600);
+
+        // HTML files don't match any rule → use default
+        assert_eq!(handler.effective_cache_max_age("index.html"), 3600);
+    }
+
+    #[test]
+    fn cache_rule_no_rules_returns_default() {
+        let tmp = tempfile::tempdir().unwrap();
+        let handler = make_handler(tmp.path(), vec![], vec![], 7200);
+        assert_eq!(handler.effective_cache_max_age("anything.css"), 7200);
     }
 }

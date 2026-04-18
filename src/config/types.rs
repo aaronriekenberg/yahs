@@ -92,6 +92,19 @@ pub enum HandlerConfig {
     Health,
 }
 
+/// A single cache rule: files whose path matches `pattern` (glob) get
+/// `max_age_secs` as their `Cache-Control: max-age`.  Rules are evaluated in
+/// order; the first match wins.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CacheRule {
+    /// Glob pattern matched against the request path relative to the location
+    /// prefix, e.g. `"images/*.png"` or `"**/*.js"`.
+    pub pattern: String,
+
+    /// Cache-Control max-age in seconds for matching files.
+    pub max_age_secs: u64,
+}
+
 /// Static file server settings.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StaticFilesConfig {
@@ -107,8 +120,20 @@ pub struct StaticFilesConfig {
     pub strip_prefix: bool,
 
     /// Cache-Control max-age in seconds for served files (0 = no caching).
+    /// Used as the fallback when no `cache_rules` entry matches.
     #[serde(default = "default_cache_max_age")]
     pub cache_max_age_secs: u64,
+
+    /// Ordered list of per-path cache rules (glob pattern → max-age).
+    /// The first matching rule wins; unmatched files use `cache_max_age_secs`.
+    #[serde(default)]
+    pub cache_rules: Vec<CacheRule>,
+
+    /// Glob patterns for paths that should always return 404.
+    /// Matched against the request path relative to the location prefix.
+    /// Example: `[".git", "**/.env"]`
+    #[serde(default)]
+    pub blocked_paths: Vec<String>,
 
     /// Attempt to serve precompressed variants before the raw file.
     #[serde(default = "default_true")]
