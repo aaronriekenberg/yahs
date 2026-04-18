@@ -1,0 +1,422 @@
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
+
+use async_trait::async_trait;
+use bytes::Bytes;
+use hyper::{Request, Response, StatusCode, body::Incoming, header};
+use tokio::io::AsyncReadExt;
+use tracing::{debug, warn};
+
+use crate::compression::negotiate_encoding;
+use crate::config::StaticFilesConfig;
+use crate::error::AppError;
+use crate::handler::{Handler, HandlerResponse, empty_body, full_body};
+use crate::server::state::AppState;
+
+pub struct StaticFilesHandler {
+    config: StaticFilesConfig,
+    /// Absolute canonical root (resolved at construction time).
+    root: PathBuf,
+    /// Location prefix this handler was registered under.
+    location_prefix: String,
+}
+
+impl StaticFilesHandler {
+    pub fn new(config: StaticFilesConfig, location_prefix: String) -> anyhow::Result<Self> {
+        let root = std::fs::canonicalize(&config.root).map_err(|e| {
+            anyhow::anyhow!("Cannot canonicalize static root '{}': {}", config.root, e)
+        })?;
+        Ok(Self {
+            config,
+            root,
+            location_prefix,
+        })
+    }
+}
+
+#[async_trait]
+impl Handler for StaticFilesHandler {
+    async fn handle(
+        &self,
+        req: Request<Incoming>,
+        _state: &AppState,
+    ) -> Result<HandlerResponse, AppError> {
+        // Only allow GET and HEAD.
+        if req.method() != hyper::Method::GET && req.method() != hyper::Method::HEAD {
+            return Ok(Response::builder()
+                .status(StatusCode::METHOD_NOT_ALLOWED)
+                .header(header::ALLOW, "GET, HEAD")
+                .body(empty_body())
+                .unwrap());
+        }
+
+        let uri_path = req.uri().path();
+
+        // Strip the location prefix from the URI path.
+        let rel_path = if self.config.strip_prefix {
+            uri_path
+                .strip_prefix(&self.location_prefix)
+                .unwrap_or(uri_path)
+        } else {
+            uri_path
+        };
+
+        // Resolve securely to an absolute path under root.
+        let file_path = self.resolve_path(rel_path)?;
+
+        debug!("Serving static file: {}", file_path.display());
+
+        // Determine accepted encoding from the request.
+        let accept_encoding = req
+            .headers()
+            .get(header::ACCEPT_ENCODING)
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_owned());
+
+        // Try to serve a precompressed variant first when the feature is enabled
+        // and the client advertises an acceptable encoding.
+        if self.config.precompressed
+            && let Some(encoding) =
+                negotiate_encoding(accept_encoding.as_deref(), &self.config.encodings)
+        {
+            let compressed_path = append_extension(&file_path, encoding.extension());
+            if compressed_path.is_file() {
+                return self
+                    .serve_file(
+                        &req,
+                        &compressed_path,
+                        Some(encoding.content_encoding()),
+                        detect_mime(&file_path),
+                    )
+                    .await;
+            }
+        }
+
+        // Fall back to the uncompressed file.
+        self.serve_file(&req, &file_path, None, detect_mime(&file_path))
+            .await
+    }
+}
+
+impl StaticFilesHandler {
+    /// Safely resolve a relative URI path under the static root.
+    fn resolve_path(&self, rel_path: &str) -> Result<PathBuf, AppError> {
+        // Decode percent-encoding and normalise slashes.
+        let decoded = percent_decode(rel_path);
+
+        // Reject paths with null bytes.
+        if decoded.contains('\0') {
+            return Err(AppError::BadRequest("Invalid path".to_string()));
+        }
+
+        // Join with root.
+        let joined = self.root.join(decoded.trim_start_matches('/'));
+
+        // Canonicalize to prevent directory traversal.
+        let canonical = match joined.canonicalize() {
+            Ok(p) => p,
+            Err(_) => {
+                // File may not exist; still validate the non-canonical path.
+                let normalized = normalize_path(&joined);
+                if !normalized.starts_with(&self.root) {
+                    return Err(AppError::NotFound);
+                }
+                return Ok(normalized);
+            }
+        };
+
+        if !canonical.starts_with(&self.root) {
+            warn!(
+                "Path traversal attempt: {} resolves to {} (outside root {})",
+                rel_path,
+                canonical.display(),
+                self.root.display()
+            );
+            return Err(AppError::NotFound);
+        }
+
+        Ok(canonical)
+    }
+
+    /// Read a file and build a response with appropriate headers.
+    /// Route to the right serve implementation, handling directories by trying index files.
+    async fn serve_file(
+        &self,
+        req: &Request<Incoming>,
+        path: &Path,
+        content_encoding: Option<&str>,
+        content_type: &str,
+    ) -> Result<HandlerResponse, AppError> {
+        let metadata = match tokio::fs::metadata(path).await {
+            Ok(m) => m,
+            Err(_) => {
+                return self.serve_index_or_404(req, path, content_encoding).await;
+            }
+        };
+
+        if metadata.is_dir() {
+            return self.serve_index_or_404(req, path, content_encoding).await;
+        }
+
+        if !metadata.is_file() {
+            return Err(AppError::NotFound);
+        }
+
+        self.serve_regular_file(req, path, content_encoding, content_type)
+            .await
+    }
+
+    /// Serve an actual regular file (no directory / index lookup).
+    async fn serve_regular_file(
+        &self,
+        req: &Request<Incoming>,
+        path: &Path,
+        content_encoding: Option<&str>,
+        content_type: &str,
+    ) -> Result<HandlerResponse, AppError> {
+        let metadata = tokio::fs::metadata(path)
+            .await
+            .map_err(|_| AppError::NotFound)?;
+
+        let file_size = metadata.len();
+        let last_modified = metadata.modified().ok();
+
+        // Build ETag from size + mtime.
+        let etag = build_etag(file_size, last_modified);
+
+        // Conditional GET: If-None-Match.
+        if let Some(inm) = req.headers().get(header::IF_NONE_MATCH)
+            && inm
+                .to_str()
+                .unwrap_or("")
+                .split(',')
+                .any(|t| t.trim().trim_matches('"') == etag.trim_matches('"'))
+        {
+            return Ok(Response::builder()
+                .status(StatusCode::NOT_MODIFIED)
+                .header(header::ETAG, &etag)
+                .body(empty_body())
+                .unwrap());
+        }
+
+        // Conditional GET: If-Modified-Since.
+        if let (Some(ims), Some(mtime)) =
+            (req.headers().get(header::IF_MODIFIED_SINCE), last_modified)
+            && let Ok(ims_str) = ims.to_str()
+            && let Ok(ims_time) = httpdate::parse_http_date(ims_str)
+            && mtime <= ims_time
+        {
+            return Ok(Response::builder()
+                .status(StatusCode::NOT_MODIFIED)
+                .header(header::ETAG, &etag)
+                .body(empty_body())
+                .unwrap());
+        }
+
+        // Handle Range request.
+        if let Some(range_header) = req.headers().get(header::RANGE)
+            && let Ok(range_str) = range_header.to_str()
+        {
+            return self
+                .serve_range(path, range_str, file_size, &etag, content_type)
+                .await;
+        }
+
+        // Read the entire file.
+        let data = tokio::fs::read(path)
+            .await
+            .map_err(|_| AppError::NotFound)?;
+
+        let mut builder = Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, content_type)
+            .header(header::CONTENT_LENGTH, file_size.to_string())
+            .header(header::ETAG, &etag)
+            .header(header::ACCEPT_RANGES, "bytes")
+            .header(
+                header::CACHE_CONTROL,
+                format!("public, max-age={}", self.config.cache_max_age_secs),
+            )
+            .header(header::VARY, "Accept-Encoding");
+
+        if let Some(enc) = content_encoding {
+            builder = builder.header(header::CONTENT_ENCODING, enc);
+        }
+
+        if let Some(mtime) = last_modified {
+            builder = builder.header(header::LAST_MODIFIED, httpdate::fmt_http_date(mtime));
+        }
+
+        let body = if req.method() == hyper::Method::HEAD {
+            empty_body()
+        } else {
+            full_body(Bytes::from(data))
+        };
+
+        Ok(builder.body(body).unwrap())
+    }
+
+    /// Try index files when a directory path is requested.
+    async fn serve_index_or_404(
+        &self,
+        req: &Request<Incoming>,
+        dir_path: &Path,
+        content_encoding: Option<&str>,
+    ) -> Result<HandlerResponse, AppError> {
+        let dir_path = if dir_path.is_file() {
+            dir_path.parent().unwrap_or(dir_path)
+        } else {
+            dir_path
+        };
+
+        for index in &self.config.index {
+            let index_path = dir_path.join(index);
+            if index_path.is_file() {
+                let mime = detect_mime(&index_path);
+                return self
+                    .serve_regular_file(req, &index_path, content_encoding, mime)
+                    .await;
+            }
+        }
+
+        Err(AppError::NotFound)
+    }
+
+    /// Serve a byte-range subset of a file.
+    async fn serve_range(
+        &self,
+        path: &Path,
+        range_header: &str,
+        file_size: u64,
+        etag: &str,
+        content_type: &str,
+    ) -> Result<HandlerResponse, AppError> {
+        let (start, end) = parse_range(range_header, file_size)
+            .ok_or_else(|| AppError::BadRequest("Invalid range".to_string()))?;
+
+        if start > end || end >= file_size {
+            return Ok(Response::builder()
+                .status(StatusCode::RANGE_NOT_SATISFIABLE)
+                .header(header::CONTENT_RANGE, format!("bytes */{}", file_size))
+                .body(empty_body())
+                .unwrap());
+        }
+
+        // Read the slice.
+        let mut file = tokio::fs::File::open(path)
+            .await
+            .map_err(|_| AppError::NotFound)?;
+
+        use tokio::io::AsyncSeekExt;
+        file.seek(std::io::SeekFrom::Start(start))
+            .await
+            .map_err(|e| AppError::internal(e.to_string()))?;
+
+        let length = end - start + 1;
+        let mut buf = vec![0u8; length as usize];
+        file.read_exact(&mut buf)
+            .await
+            .map_err(|e| AppError::internal(e.to_string()))?;
+
+        Ok(Response::builder()
+            .status(StatusCode::PARTIAL_CONTENT)
+            .header(header::CONTENT_TYPE, content_type)
+            .header(header::CONTENT_LENGTH, length.to_string())
+            .header(
+                header::CONTENT_RANGE,
+                format!("bytes {}-{}/{}", start, end, file_size),
+            )
+            .header(header::ETAG, etag)
+            .header(header::ACCEPT_RANGES, "bytes")
+            .body(full_body(Bytes::from(buf)))
+            .unwrap())
+    }
+}
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+fn detect_mime(path: &Path) -> &'static str {
+    mime_guess::from_path(path)
+        .first_raw()
+        .unwrap_or("application/octet-stream")
+}
+
+fn build_etag(size: u64, mtime: Option<SystemTime>) -> String {
+    let mtime_secs = mtime
+        .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    format!("\"{:x}-{:x}\"", mtime_secs, size)
+}
+
+fn append_extension(path: &Path, ext: &str) -> PathBuf {
+    let mut s = path.as_os_str().to_owned();
+    s.push(ext);
+    PathBuf::from(s)
+}
+
+/// Very simple percent-decoding (only %XX sequences).
+fn percent_decode(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let bytes = input.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && let (Some(h), Some(l)) = (hex_digit(bytes[i + 1]), hex_digit(bytes[i + 2]))
+        {
+            out.push(char::from(h << 4 | l));
+            i += 3;
+            continue;
+        }
+        out.push(char::from(bytes[i]));
+        i += 1;
+    }
+    out
+}
+
+fn hex_digit(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
+    }
+}
+
+/// Normalize `..` and `.` components without hitting the filesystem.
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => {
+                out.pop();
+            }
+            std::path::Component::CurDir => {}
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+/// Parse a simple `bytes=start-end` range header.
+/// Returns `(start, end)` (both inclusive).
+fn parse_range(header: &str, file_size: u64) -> Option<(u64, u64)> {
+    let s = header.trim().strip_prefix("bytes=")?;
+    let (start_str, end_str) = s.split_once('-')?;
+
+    if start_str.is_empty() {
+        // Suffix range: bytes=-N  → last N bytes.
+        let suffix: u64 = end_str.trim().parse().ok()?;
+        let start = file_size.saturating_sub(suffix);
+        Some((start, file_size.saturating_sub(1)))
+    } else {
+        let start: u64 = start_str.trim().parse().ok()?;
+        let end = if end_str.trim().is_empty() {
+            file_size.saturating_sub(1)
+        } else {
+            end_str.trim().parse().ok()?
+        };
+        Some((start, end))
+    }
+}

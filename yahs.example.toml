@@ -1,0 +1,89 @@
+# yahs — yet another http server
+# Example configuration file
+#
+# Copy this file to yahs.toml and adjust to your needs.
+
+# ── Global server settings ─────────────────────────────────────────────────
+
+[server]
+# Address and port to listen on.
+bind = "0.0.0.0:8080"
+
+# Value emitted in the `Server` response header.
+server_name = "yahs/0.1"
+
+# Maximum simultaneous connections (0 = unlimited).
+max_connections = 0
+
+# Idle keepalive timeout in seconds.
+keepalive_timeout_secs = 75
+
+# Uncomment to enable TLS:
+# [server.tls]
+# cert_path = "/etc/ssl/certs/server.crt"
+# key_path  = "/etc/ssl/private/server.key"
+
+# ── Logging ────────────────────────────────────────────────────────────────
+
+[logging]
+# Tracing level: trace | debug | info | warn | error
+level = "info"
+
+# Emit a JSON access-log line for every request.
+access_log = true
+
+# ── Upstreams (for reverse proxy) ──────────────────────────────────────────
+
+[[upstreams]]
+name     = "api_backend"
+strategy = "round_robin"   # round_robin | ip_hash | random
+
+  [[upstreams.backends]]
+  url    = "http://127.0.0.1:3000"
+  weight = 1
+
+  [[upstreams.backends]]
+  url    = "http://127.0.0.1:3001"
+  weight = 1
+
+# ── Locations ──────────────────────────────────────────────────────────────
+# Locations are matched by longest-prefix first.
+
+# Health / readiness endpoint.
+[[locations]]
+path = "/health"
+
+  [locations.handler]
+  type = "health"
+
+# Reverse proxy — forward /api/* to the api_backend cluster.
+[[locations]]
+path = "/api"
+
+  [locations.handler]
+  type              = "reverse_proxy"
+  upstream          = "api_backend"
+  strip_prefix      = true    # remove "/api" before forwarding
+  connect_timeout_ms = 5000
+  request_timeout_ms = 30000
+  remove_headers    = ["x-internal-token"]
+
+  [locations.extra_headers]
+  "X-Proxy"        = "yahs"
+  "Cache-Control"  = "no-store"
+
+# Static file server — serve everything under /static/* from ./www.
+[[locations]]
+path = "/"
+
+  [locations.handler]
+  type             = "static_files"
+  root             = "./www"
+  index            = ["index.html", "index.htm"]
+  strip_prefix     = true
+  cache_max_age_secs = 3600
+
+  # Serve precompressed files when the client accepts them.
+  precompressed    = true
+  # Preference order: try zstd first, then brotli, then gzip.
+  encodings        = ["zstd", "brotli", "gzip"]
