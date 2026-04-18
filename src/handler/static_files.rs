@@ -111,14 +111,14 @@ impl Handler for StaticFilesHandler {
                         &compressed_path,
                         Some(encoding.content_encoding()),
                         detect_mime(&file_path),
-                        rel_path,
+                        &decoded_rel,
                     )
                     .await;
             }
         }
 
         // Fall back to the uncompressed file.
-        self.serve_file(&req, &file_path, None, detect_mime(&file_path), rel_path)
+        self.serve_file(&req, &file_path, None, detect_mime(&file_path), &decoded_rel)
             .await
     }
 }
