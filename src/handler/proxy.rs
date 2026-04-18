@@ -15,7 +15,7 @@ use tracing::debug;
 
 use crate::config::{BackendConfig, LoadBalancingStrategy, ReverseProxyConfig, UpstreamConfig};
 use crate::error::AppError;
-use crate::handler::{Handler, HandlerResponse, full_body};
+use crate::handler::{BoxBody, Handler, HandlerResponse, full_body};
 use crate::server::state::AppState;
 
 /// Headers that must not be forwarded as-is.
@@ -35,7 +35,7 @@ pub struct ReverseProxyHandler {
     config: ReverseProxyConfig,
     location_prefix: String,
     upstream: Arc<UpstreamRuntime>,
-    client: Client<HttpConnector, crate::handler::BoxBody>,
+    client: Client<HttpConnector, BoxBody>,
 }
 
 impl ReverseProxyHandler {

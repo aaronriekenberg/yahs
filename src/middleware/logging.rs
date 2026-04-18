@@ -1,5 +1,5 @@
+use std::collections::BTreeMap;
 use std::time::Instant;
-use std::{collections::BTreeMap, str};
 
 use chrono::Utc;
 use hyper::{
