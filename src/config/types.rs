@@ -208,7 +208,7 @@ pub struct ReverseProxyConfig {
     #[serde(default = "default_keepalive_timeout")]
     pub tcp_keepalive_secs: u64,
 
-    /// Cache-Control max-age in seconds for proxied responses (0 = no caching).
+    /// Cache-Control max-age in seconds for proxied responses (0 = `no-store`).
     #[serde(default = "default_proxy_cache_max_age")]
     pub cache_max_age_secs: u64,
 

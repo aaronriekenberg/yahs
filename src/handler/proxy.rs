@@ -176,10 +176,12 @@ impl Handler for ReverseProxyHandler {
             }
             resp_builder = resp_builder.header(name, value);
         }
-        resp_builder = resp_builder.header(
-            hyper::header::CACHE_CONTROL,
-            format!("public, max-age={}", self.config.cache_max_age_secs),
-        );
+        let cache_control = if self.config.cache_max_age_secs == 0 {
+            "no-store".to_string()
+        } else {
+            format!("public, max-age={}", self.config.cache_max_age_secs)
+        };
+        resp_builder = resp_builder.header(hyper::header::CACHE_CONTROL, cache_control);
 
         let final_resp = resp_builder
             .body(full_body(resp_bytes))
