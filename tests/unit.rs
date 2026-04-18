@@ -142,6 +142,11 @@ upstream = "backend"
 max_connection_pool_size = 50
 tcp_keepalive_enabled = true
 tcp_keepalive_secs = 42
+cache_max_age_secs = 120
+remove_request_headers = ["x-internal-token"]
+
+[locations.handler.extra_request_headers]
+"x-proxy" = "yahs"
 "#;
         let f = write_config(cfg_content);
         let config = load_config(f.path()).unwrap();
@@ -152,6 +157,45 @@ tcp_keepalive_secs = 42
                 assert_eq!(proxy.max_connection_pool_size, 50);
                 assert!(proxy.tcp_keepalive_enabled);
                 assert_eq!(proxy.tcp_keepalive_secs, 42);
+                assert_eq!(proxy.cache_max_age_secs, 120);
+                assert_eq!(
+                    proxy.remove_request_headers,
+                    vec!["x-internal-token".to_string()]
+                );
+                assert_eq!(
+                    proxy.extra_request_headers.get("x-proxy"),
+                    Some(&"yahs".to_string())
+                );
+            }
+            _ => panic!("expected reverse_proxy handler"),
+        }
+    }
+
+    #[test]
+    fn test_load_proxy_config_defaults_cache_max_age_to_zero() {
+        let cfg_content = r#"
+[server]
+bind = "127.0.0.1:8080"
+
+[[upstreams]]
+name = "backend"
+[[upstreams.backends]]
+url = "http://127.0.0.1:3000"
+
+[[locations]]
+path = "/api"
+
+[locations.handler]
+type = "reverse_proxy"
+upstream = "backend"
+"#;
+        let f = write_config(cfg_content);
+        let config = load_config(f.path()).unwrap();
+        match &config.locations[0].handler {
+            yahs::config::HandlerConfig::ReverseProxy(proxy) => {
+                assert_eq!(proxy.cache_max_age_secs, 0);
+                assert!(proxy.extra_request_headers.is_empty());
+                assert!(proxy.remove_request_headers.is_empty());
             }
             _ => panic!("expected reverse_proxy handler"),
         }

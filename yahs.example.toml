@@ -75,11 +75,11 @@ path = "/api"
   max_connection_pool_size = 32
   tcp_keepalive_enabled = false
   tcp_keepalive_secs = 75
-  remove_headers    = ["x-internal-token"]
+  cache_max_age_secs = 0
+  remove_request_headers = ["x-internal-token"]
 
-  [locations.extra_headers]
-  "X-Proxy"        = "yahs"
-  "Cache-Control"  = "no-store"
+  [locations.handler.extra_request_headers]
+  "X-Proxy" = "yahs"
 
 # Static file server — serve everything under /static/* from ./www.
 [[locations]]
