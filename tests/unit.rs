@@ -91,6 +91,10 @@ type = "health"
         let f = write_config(cfg_content);
         let config = load_config(f.path()).unwrap();
         assert_eq!(config.server.bind, "127.0.0.1:0");
+        assert_eq!(config.server.max_connections, 0);
+        assert_eq!(config.server.keepalive_timeout_secs, 75);
+        assert!(!config.server.tcp_keepalive_enabled);
+        assert_eq!(config.server.tcp_keepalive_secs, 75);
         assert_eq!(config.locations.len(), 1);
         assert_eq!(config.locations[0].path, "/health");
     }
@@ -135,11 +139,22 @@ path = "/api"
 [locations.handler]
 type = "reverse_proxy"
 upstream = "backend"
+max_connection_pool_size = 50
+tcp_keepalive_enabled = true
+tcp_keepalive_secs = 42
 "#;
         let f = write_config(cfg_content);
         let config = load_config(f.path()).unwrap();
         assert_eq!(config.upstreams.len(), 1);
         assert_eq!(config.upstreams[0].name, "backend");
+        match &config.locations[0].handler {
+            yahs::config::HandlerConfig::ReverseProxy(proxy) => {
+                assert_eq!(proxy.max_connection_pool_size, 50);
+                assert!(proxy.tcp_keepalive_enabled);
+                assert_eq!(proxy.tcp_keepalive_secs, 42);
+            }
+            _ => panic!("expected reverse_proxy handler"),
+        }
     }
 
     #[test]

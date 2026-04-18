@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use hyper::body::Incoming;
@@ -7,6 +8,7 @@ use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 use tokio::signal;
+use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 
 use crate::config::{Config, HandlerConfig, LocationConfig};
@@ -147,10 +149,19 @@ fn inject_server_header(mut resp: HandlerResponse, server_name: &str) -> Handler
 pub async fn run_server(config: Config) -> Result<()> {
     let bind_addr = config.server.bind.clone();
     let access_log_enabled = config.logging.access_log;
+    let max_connections = config.server.max_connections;
+    let keepalive_timeout = Duration::from_secs(config.server.keepalive_timeout_secs);
+    let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
+    let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
 
     let state = AppState::new(config.clone());
     let handlers = Arc::new(build_handlers(&config)?);
     let locations = Arc::new(config.locations.clone());
+    let connection_limiter = if max_connections > 0 {
+        Some(Arc::new(Semaphore::new(max_connections as usize)))
+    } else {
+        None
+    };
 
     let listener = TcpListener::bind(&bind_addr)
         .await
@@ -173,9 +184,34 @@ pub async fn run_server(config: Config) -> Result<()> {
                 let handlers = handlers.clone();
                 let locations = locations.clone();
                 let remote_addr = peer_addr.to_string();
+                let connection_permit = if let Some(limiter) = &connection_limiter {
+                    Some(limiter.clone().acquire_owned().await?)
+                } else {
+                    None
+                };
+
+                if server_tcp_keepalive_enabled
+                    && let Err(e) = set_tcp_keepalive(&stream, server_tcp_keepalive)
+                {
+                    warn!("Failed to set TCP keepalive for {}: {}", remote_addr, e);
+                }
 
                 tokio::spawn(async move {
+                    let _connection_permit = connection_permit;
                     let io = TokioIo::new(stream);
+                    let mut conn_builder = hyper_util::server::conn::auto::Builder::new(
+                        hyper_util::rt::TokioExecutor::new(),
+                    );
+                    conn_builder.timer(hyper_util::rt::TokioTimer::new());
+                    conn_builder.http1().keep_alive(keepalive_timeout.as_secs() > 0);
+                    if keepalive_timeout.as_secs() > 0 {
+                        conn_builder
+                            .http2()
+                            .keep_alive_interval(Some(keepalive_timeout))
+                            .keep_alive_timeout(keepalive_timeout);
+                    } else {
+                        conn_builder.http2().keep_alive_interval(None);
+                    }
 
                     let service = hyper::service::service_fn(move |req| {
                         let state = state.clone();
@@ -196,11 +232,7 @@ pub async fn run_server(config: Config) -> Result<()> {
                         }
                     });
 
-                    if let Err(e) = hyper_util::server::conn::auto::Builder::new(
-                        hyper_util::rt::TokioExecutor::new(),
-                    )
-                    .serve_connection(io, service)
-                    .await
+                    if let Err(e) = conn_builder.serve_connection(io, service).await
                     {
                         // Ignore normal connection close errors.
                         if !e.to_string().contains("connection closed") {
@@ -218,6 +250,11 @@ pub async fn run_server(config: Config) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn set_tcp_keepalive(stream: &tokio::net::TcpStream, duration: Duration) -> std::io::Result<()> {
+    let keepalive = socket2::TcpKeepalive::new().with_time(duration);
+    socket2::SockRef::from(stream).set_tcp_keepalive(&keepalive)
 }
 
 async fn shutdown_signal() {

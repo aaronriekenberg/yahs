@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::time::Duration;
+use std::{collections::BTreeMap, time::Duration};
 use tracing::info;
 
 /// A single structured access log entry.
@@ -30,7 +30,13 @@ pub struct AccessLogRecord {
     pub response_bytes: u64,
 
     /// Total request processing time in milliseconds.
-    pub duration_ms: f64,
+    pub duration_ns: u128,
+
+    /// All request headers.
+    pub request_headers: BTreeMap<String, Vec<String>>,
+
+    /// All response headers.
+    pub response_headers: BTreeMap<String, Vec<String>>,
 
     /// Name of the upstream used (None for static files or health).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,8 +64,8 @@ impl AccessLogRecord {
         }
     }
 
-    /// Format a `Duration` as fractional milliseconds.
-    pub fn duration_ms_from(duration: Duration) -> f64 {
-        duration.as_secs_f64() * 1000.0
+    /// Format a `Duration` in nanoseconds.
+    pub fn duration_ns_from(duration: Duration) -> u128 {
+        duration.as_nanos()
     }
 }

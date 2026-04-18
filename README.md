@@ -14,6 +14,8 @@ written in Rust, inspired by nginx.
 | Reverse proxy with round-robin / ip-hash / random LB | ✅ |
 | Hop-by-hop header stripping | ✅ |
 | Connect + request timeouts | ✅ |
+| Reused reverse-proxy client connection pool | ✅ |
+| Configurable TCP keepalive (server + proxy upstream) | ✅ |
 | Health / readiness endpoint | ✅ |
 | Structured JSON access logs | ✅ |
 | Per-request correlation IDs | ✅ |
@@ -124,6 +126,9 @@ Forwards requests to an upstream cluster.
 | `strip_prefix` | `true` | Remove location prefix before forwarding |
 | `connect_timeout_ms` | `5000` | Connection timeout |
 | `request_timeout_ms` | `30000` | Total request timeout |
+| `max_connection_pool_size` | `32` | Max idle pooled upstream connections per host |
+| `tcp_keepalive_enabled` | `false` | Enable TCP keepalive for upstream sockets |
+| `tcp_keepalive_secs` | `75` | Upstream TCP keepalive probe idle time |
 | `extra_headers` | `{}` | Headers injected into the forwarded request |
 | `remove_headers` | `[]` | Request headers stripped before forwarding |
 
@@ -170,7 +175,13 @@ Every request emits a JSON line to stdout at `INFO` level:
   "http_version": "HTTP/1.1",
   "status": 200,
   "response_bytes": 1234,
-  "duration_ms": 0.42,
+  "duration_ns": 420000,
+  "request_headers": {
+    "accept": ["*/*"]
+  },
+  "response_headers": {
+    "content-type": ["text/html"]
+  },
   "location": "/static",
   "user_agent": "curl/8.0"
 }
@@ -195,4 +206,3 @@ cargo fmt
 ## License
 
 MIT
-

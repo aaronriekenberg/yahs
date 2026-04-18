@@ -18,6 +18,12 @@ max_connections = 0
 # Idle keepalive timeout in seconds.
 keepalive_timeout_secs = 75
 
+# Enable TCP keepalive probes on accepted client connections.
+tcp_keepalive_enabled = false
+
+# TCP keepalive probe idle time in seconds.
+tcp_keepalive_secs = 75
+
 # Uncomment to enable TLS:
 # [server.tls]
 # cert_path = "/etc/ssl/certs/server.crt"
@@ -66,6 +72,9 @@ path = "/api"
   strip_prefix      = true    # remove "/api" before forwarding
   connect_timeout_ms = 5000
   request_timeout_ms = 30000
+  max_connection_pool_size = 32
+  tcp_keepalive_enabled = false
+  tcp_keepalive_secs = 75
   remove_headers    = ["x-internal-token"]
 
   [locations.extra_headers]

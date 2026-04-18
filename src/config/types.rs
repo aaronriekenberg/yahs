@@ -37,6 +37,14 @@ pub struct ServerConfig {
     #[serde(default = "default_keepalive_timeout")]
     pub keepalive_timeout_secs: u64,
 
+    /// Enable TCP keepalive probes on accepted client connections.
+    #[serde(default)]
+    pub tcp_keepalive_enabled: bool,
+
+    /// TCP keepalive probe idle time in seconds for accepted client connections.
+    #[serde(default = "default_keepalive_timeout")]
+    pub tcp_keepalive_secs: u64,
+
     /// Optional TLS configuration.
     pub tls: Option<TlsConfig>,
 }
@@ -188,6 +196,18 @@ pub struct ReverseProxyConfig {
     #[serde(default = "default_request_timeout_ms")]
     pub request_timeout_ms: u64,
 
+    /// Maximum number of idle pooled connections per upstream host.
+    #[serde(default = "default_proxy_max_connection_pool_size")]
+    pub max_connection_pool_size: usize,
+
+    /// Enable TCP keepalive probes for upstream connections.
+    #[serde(default)]
+    pub tcp_keepalive_enabled: bool,
+
+    /// TCP keepalive probe idle time in seconds for upstream connections.
+    #[serde(default = "default_keepalive_timeout")]
+    pub tcp_keepalive_secs: u64,
+
     /// Extra request headers to forward (or override).
     #[serde(default)]
     pub extra_headers: HashMap<String, String>,
@@ -203,6 +223,10 @@ fn default_connect_timeout_ms() -> u64 {
 
 fn default_request_timeout_ms() -> u64 {
     30000
+}
+
+fn default_proxy_max_connection_pool_size() -> usize {
+    32
 }
 
 /// An upstream cluster with one or more backends.
