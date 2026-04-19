@@ -304,8 +304,11 @@ pub async fn run_server(config: Config) -> Result<()> {
     Ok(())
 }
 
-fn set_tcp_keepalive(stream: &tokio::net::TcpStream, duration: Duration) -> std::io::Result<()> {
-    let keepalive = socket2::TcpKeepalive::new().with_time(duration);
+fn set_tcp_keepalive(stream: &tokio::net::TcpStream, idle: Duration) -> std::io::Result<()> {
+    let keepalive = socket2::TcpKeepalive::new()
+        .with_time(idle)
+        .with_interval(idle)
+        .with_retries(9);
     socket2::SockRef::from(stream).set_tcp_keepalive(&keepalive)
 }
 

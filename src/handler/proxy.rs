@@ -198,7 +198,10 @@ impl UpstreamRuntime {
         let mut connector = HttpConnector::new();
         connector.set_nodelay(config.tcp_nodelay);
         if config.tcp_keepalive_enabled {
-            connector.set_keepalive(Some(Duration::from_secs(config.tcp_keepalive_secs)));
+            let ka = Duration::from_secs(config.tcp_keepalive_secs);
+            connector.set_keepalive(Some(ka));
+            connector.set_keepalive_interval(Some(ka));
+            connector.set_keepalive_retries(Some(9));
         } else {
             connector.set_keepalive(None);
         }

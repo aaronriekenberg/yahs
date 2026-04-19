@@ -244,7 +244,7 @@ HTTP client and connection-pool settings are configured per upstream cluster:
 | `http2_prior_knowledge` | `false` | Use HTTP/2 cleartext (h2c) for all upstream connections |
 | `tcp_nodelay` | `true` | Disable Nagle's algorithm on upstream sockets |
 | `tcp_keepalive_enabled` | `true` | Enable TCP keepalive probes for upstream sockets |
-| `tcp_keepalive_secs` | `15` | Upstream TCP keepalive probe idle time in seconds |
+| `tcp_keepalive_secs` | `15` | Upstream TCP keepalive idle time and inter-probe interval in seconds (retries fixed at 9) |
 | `http_keepalive_timeout_secs` | `0` | HTTP/2 PING interval in seconds (0 = disabled) |
 
 ```toml

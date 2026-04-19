@@ -28,7 +28,7 @@ http_keepalive_timeout_secs = 20
 # Enable TCP keepalive probes on accepted client connections.
 tcp_keepalive_enabled = true
 
-# TCP keepalive probe idle time in seconds.
+# TCP keepalive probe idle time in seconds (also used as the inter-probe interval).
 tcp_keepalive_secs = 15
 
 # Disable Nagle's algorithm on accepted client connections.
