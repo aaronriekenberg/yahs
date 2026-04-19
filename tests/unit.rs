@@ -132,6 +132,9 @@ bind = "127.0.0.1:8080"
 
 [[upstreams]]
 name = "backend"
+max_idle_connections_per_host = 50
+tcp_keepalive_enabled = true
+tcp_keepalive_secs = 42
 [[upstreams.backends]]
 url = "http://127.0.0.1:3000"
 
@@ -141,9 +144,6 @@ path = "/api"
 [locations.handler]
 type = "reverse_proxy"
 upstream = "backend"
-max_idle_connections_per_host = 50
-tcp_keepalive_enabled = true
-tcp_keepalive_secs = 42
 cache_max_age_secs = 120
 remove_request_headers = ["x-internal-token"]
 
@@ -154,11 +154,11 @@ remove_request_headers = ["x-internal-token"]
         let config = load_config(f.path()).unwrap();
         assert_eq!(config.upstreams.len(), 1);
         assert_eq!(config.upstreams[0].name, "backend");
+        assert_eq!(config.upstreams[0].max_idle_connections_per_host, 50);
+        assert!(config.upstreams[0].tcp_keepalive_enabled);
+        assert_eq!(config.upstreams[0].tcp_keepalive_secs, 42);
         match &config.locations[0].handler {
             yahs::config::HandlerConfig::ReverseProxy(proxy) => {
-                assert_eq!(proxy.max_idle_connections_per_host, 50);
-                assert!(proxy.tcp_keepalive_enabled);
-                assert_eq!(proxy.tcp_keepalive_secs, 42);
                 assert_eq!(proxy.cache_max_age_secs, 120);
                 assert_eq!(
                     proxy.remove_request_headers,

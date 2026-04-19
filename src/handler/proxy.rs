@@ -35,7 +35,6 @@ pub struct ReverseProxyHandler {
     config: ReverseProxyConfig,
     location_prefix: String,
     upstream: Arc<UpstreamRuntime>,
-    client: Client<HttpConnector, BoxBody>,
 }
 
 impl ReverseProxyHandler {
@@ -45,25 +44,11 @@ impl ReverseProxyHandler {
         upstream_config: &UpstreamConfig,
     ) -> Self {
         let upstream = Arc::new(UpstreamRuntime::new(upstream_config));
-        let mut connector = HttpConnector::new();
-        if config.tcp_keepalive_enabled {
-            connector.set_keepalive(Some(Duration::from_secs(config.tcp_keepalive_secs)));
-        } else {
-            connector.set_keepalive(None);
-        }
-
-        let mut client_builder = Client::builder(TokioExecutor::new());
-        client_builder.pool_max_idle_per_host(config.max_idle_connections_per_host);
-        if config.http2_prior_knowledge {
-            client_builder.http2_only(true);
-        }
-        let client = client_builder.build(connector);
 
         Self {
             config,
             location_prefix,
             upstream,
-            client,
         }
     }
 }
@@ -150,9 +135,9 @@ impl Handler for ReverseProxyHandler {
             .body(Full::new(body_bytes).map_err(|e| match e {}).boxed())
             .map_err(|e| AppError::upstream(e.to_string()))?;
 
-        let request_timeout = Duration::from_millis(self.config.request_timeout_ms);
+        let request_timeout = Duration::from_millis(self.upstream.request_timeout_ms);
 
-        let response = tokio::time::timeout(request_timeout, self.client.request(forward_req))
+        let response = tokio::time::timeout(request_timeout, self.upstream.client.request(forward_req))
             .await
             .map_err(|_| AppError::upstream("Request to upstream timed out"))?
             .map_err(|e| AppError::upstream(e.to_string()))?;
@@ -195,6 +180,8 @@ struct UpstreamRuntime {
     backends: Vec<String>,
     strategy: LoadBalancingStrategy,
     counter: AtomicUsize,
+    client: Client<HttpConnector, BoxBody>,
+    request_timeout_ms: u64,
 }
 
 impl UpstreamRuntime {
@@ -207,10 +194,26 @@ impl UpstreamRuntime {
             })
             .collect();
 
+        let mut connector = HttpConnector::new();
+        if config.tcp_keepalive_enabled {
+            connector.set_keepalive(Some(Duration::from_secs(config.tcp_keepalive_secs)));
+        } else {
+            connector.set_keepalive(None);
+        }
+
+        let mut client_builder = Client::builder(TokioExecutor::new());
+        client_builder.pool_max_idle_per_host(config.max_idle_connections_per_host);
+        if config.http2_prior_knowledge {
+            client_builder.http2_only(true);
+        }
+        let client = client_builder.build(connector);
+
         Self {
             backends,
             strategy: config.strategy,
             counter: AtomicUsize::new(0),
+            client,
+            request_timeout_ms: config.request_timeout_ms,
         }
     }
 
