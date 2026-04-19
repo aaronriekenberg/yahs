@@ -105,6 +105,8 @@ type = "health"
         let root = tmp.path().to_str().unwrap().to_owned();
         let cfg_content = format!(
             r#"
+root = "{root}"
+
 [server]
 bind = "127.0.0.1:8080"
 
@@ -113,12 +115,12 @@ path = "/static"
 
 [locations.handler]
 type = "static_files"
-root = "{root}"
 "#,
             root = root
         );
         let f = write_config(&cfg_content);
         let config = load_config(f.path()).unwrap();
+        assert_eq!(config.root, root);
         assert_eq!(config.locations[0].path, "/static");
     }
 
@@ -247,6 +249,8 @@ type = "health"
         let root = tmp.path().to_str().unwrap().to_owned();
         let cfg_content = format!(
             r#"
+root = "{root}"
+
 [server]
 bind = "127.0.0.1:8080"
 
@@ -255,7 +259,6 @@ path = "/static"
 
 [locations.handler]
 type = "static_files"
-root = "{root}"
 cache_max_age_secs = 3600
 blocked_paths = [".git", ".env"]
 
@@ -291,6 +294,8 @@ max_age_secs = 86400
         let root = tmp.path().to_str().unwrap().to_owned();
         let cfg_content = format!(
             r#"
+root = "{root}"
+
 [server]
 bind = "127.0.0.1:8080"
 
@@ -299,7 +304,6 @@ path = "/"
 
 [locations.handler]
 type = "static_files"
-root = "{root}"
 "#,
             root = root
         );

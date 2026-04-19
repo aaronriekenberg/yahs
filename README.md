@@ -46,9 +46,24 @@ $EDITOR yahs.toml
 yahs is configured with a single TOML file.  See [`yahs.example.toml`](yahs.example.toml)
 for a fully commented example covering all supported options.
 
+### `root`
+
+```toml
+root = "./www"   # default: "."
+```
+
+Top-level directory used as the base for **all** file paths in the config:
+
+- Static file serving — `static_files` locations serve files from this directory.
+- Error files — `client_error_file` and `server_error_file` paths are resolved relative to `root` (absolute paths are used as-is).
+
+Defaults to `"."` (the process working directory).
+
 ### Minimal example
 
 ```toml
+root = "./www"
+
 [server]
 bind = "0.0.0.0:8080"
 
@@ -57,7 +72,6 @@ path = "/"
 
 [locations.handler]
 type  = "static_files"
-root  = "./www"
 ```
 
 ### Reverse proxy example
@@ -109,11 +123,11 @@ src/
 
 ### `static_files`
 
-Serves files from a local directory.
+Serves files from a local directory.  The root directory is taken from the
+top-level [`root`](#root) configuration key.
 
 | Key | Default | Description |
 |---|---|---|
-| `root` | *(required)* | Filesystem root directory |
 | `index` | `["index.html"]` | Index file names tried for directory requests |
 | `strip_prefix` | `true` | Remove location prefix before path lookup |
 | `cache_max_age_secs` | `3600` | `Cache-Control: max-age` fallback value |
@@ -136,7 +150,6 @@ wildcards follow standard glob syntax via the
 ```toml
 [locations.handler]
 type          = "static_files"
-root          = "./www"
 blocked_paths = [".git", ".env", ".htaccess"]
 ```
 
@@ -149,7 +162,6 @@ first matching rule wins; if nothing matches the request path falls back to
 ```toml
 [locations.handler]
 type               = "static_files"
-root               = "./www"
 cache_max_age_secs = 3600        # 1 hour (default / fallback)
 
 [[locations.handler.cache_rules]]
@@ -195,13 +207,16 @@ The original HTTP status code is always preserved (e.g. `404 Not Found` stays
 ```toml
 [error_files]
 # Served for any 4xx response.
-client_error_file = "./errors/4xx.html"
+client_error_file = "errors/4xx.html"
 client_error_cache_max_age_secs = 0    # 0 → no-store (default)
 
 # Served for any 5xx response.
-server_error_file = "./errors/5xx.html"
+server_error_file = "errors/5xx.html"
 server_error_cache_max_age_secs = 0    # 0 → no-store (default)
 ```
+
+Paths are resolved relative to the top-level [`root`](#root) directory.
+Absolute paths are used as-is.
 
 Both keys are optional.  Omitting the whole `[error_files]` section (or either
 key within it) leaves the corresponding error responses unchanged.

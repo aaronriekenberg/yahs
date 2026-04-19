@@ -7,6 +7,11 @@ pub struct Config {
     /// Global server settings.
     pub server: ServerConfig,
 
+    /// Root directory used as the base for static file serving and error file
+    /// paths.  Defaults to `"."` (the working directory).
+    #[serde(default = "default_root")]
+    pub root: String,
+
     /// Named locations mapped to handlers.
     pub locations: Vec<LocationConfig>,
 
@@ -82,6 +87,10 @@ fn default_server_name() -> String {
     "yahs".to_string()
 }
 
+fn default_root() -> String {
+    ".".to_string()
+}
+
 fn default_keepalive_timeout() -> u64 {
     75
 }
@@ -141,9 +150,6 @@ pub struct CacheRule {
 /// Static file server settings.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StaticFilesConfig {
-    /// Filesystem root directory.
-    pub root: String,
-
     /// Index file names to try in order when a directory is requested.
     #[serde(default = "default_index_files")]
     pub index: Vec<String>,

@@ -26,9 +26,9 @@ pub struct StaticFilesHandler {
 }
 
 impl StaticFilesHandler {
-    pub fn new(config: StaticFilesConfig, location_prefix: String) -> anyhow::Result<Self> {
-        let root = std::fs::canonicalize(&config.root).map_err(|e| {
-            anyhow::anyhow!("Cannot canonicalize static root '{}': {}", config.root, e)
+    pub fn new(config: StaticFilesConfig, location_prefix: String, root: &str) -> anyhow::Result<Self> {
+        let root = std::fs::canonicalize(root).map_err(|e| {
+            anyhow::anyhow!("Cannot canonicalize static root '{}': {}", root, e)
         })?;
 
         // Pre-compile blocked-paths glob set.
@@ -522,7 +522,6 @@ mod tests {
         cache_max_age_secs: u64,
     ) -> StaticFilesHandler {
         let config = StaticFilesConfig {
-            root: tmp_root.to_str().unwrap().to_owned(),
             index: vec!["index.html".to_owned()],
             strip_prefix: true,
             cache_max_age_secs,
@@ -531,7 +530,8 @@ mod tests {
             precompressed: false,
             encodings: vec![],
         };
-        StaticFilesHandler::new(config, "/static".to_owned()).unwrap()
+        let root = tmp_root.to_str().unwrap();
+        StaticFilesHandler::new(config, "/static".to_owned(), root).unwrap()
     }
 
     // ── blocked_paths ────────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ fn build_handlers(config: &Config) -> Result<HashMap<String, Arc<dyn Handler>>> 
     for location in &config.locations {
         let handler: Arc<dyn Handler> = match &location.handler {
             HandlerConfig::StaticFiles(sf_config) => {
-                let h = StaticFilesHandler::new(sf_config.clone(), location.path.clone())?;
+                let h = StaticFilesHandler::new(sf_config.clone(), location.path.clone(), &config.root)?;
                 Arc::new(h)
             }
             HandlerConfig::ReverseProxy(rp_config) => {
@@ -173,7 +173,7 @@ pub async fn run_server(config: Config) -> Result<()> {
     let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
     let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
 
-    let error_files = ErrorFileStore::from_config(config.error_files.as_ref()).await?;
+    let error_files = ErrorFileStore::from_config(config.error_files.as_ref(), &config.root).await?;
     let state = AppState::new(config.clone(), error_files);
     let handlers = Arc::new(build_handlers(&config)?);
     let locations = Arc::new(config.locations.clone());

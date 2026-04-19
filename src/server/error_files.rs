@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::Result;
 use bytes::Bytes;
 
@@ -22,10 +24,13 @@ pub struct ErrorFileStore {
 impl ErrorFileStore {
     /// Build an `ErrorFileStore` from the optional config section.
     ///
+    /// `root` is the top-level `root` directory; relative paths in the config
+    /// are resolved against it.
+    ///
     /// Returns an error if a configured file cannot be read, so that the
     /// server fails fast at startup rather than silently serving the default
     /// error page.
-    pub async fn from_config(config: Option<&ErrorFilesConfig>) -> Result<Self> {
+    pub async fn from_config(config: Option<&ErrorFilesConfig>, root: &str) -> Result<Self> {
         let Some(cfg) = config else {
             return Ok(Self {
                 client_error: None,
@@ -35,8 +40,9 @@ impl ErrorFileStore {
 
         let client_error = match &cfg.client_error_file {
             Some(path) => {
-                let body = tokio::fs::read(path).await.map_err(|e| {
-                    anyhow::anyhow!("Failed to read client_error_file '{}': {}", path, e)
+                let full_path = resolve_path(root, path);
+                let body = tokio::fs::read(&full_path).await.map_err(|e| {
+                    anyhow::anyhow!("Failed to read client_error_file '{}': {}", full_path.display(), e)
                 })?;
                 Some(ErrorFileEntry {
                     body: Bytes::from(body),
@@ -48,8 +54,9 @@ impl ErrorFileStore {
 
         let server_error = match &cfg.server_error_file {
             Some(path) => {
-                let body = tokio::fs::read(path).await.map_err(|e| {
-                    anyhow::anyhow!("Failed to read server_error_file '{}': {}", path, e)
+                let full_path = resolve_path(root, path);
+                let body = tokio::fs::read(&full_path).await.map_err(|e| {
+                    anyhow::anyhow!("Failed to read server_error_file '{}': {}", full_path.display(), e)
                 })?;
                 Some(ErrorFileEntry {
                     body: Bytes::from(body),
@@ -63,6 +70,17 @@ impl ErrorFileStore {
             client_error,
             server_error,
         })
+    }
+}
+
+/// Resolve a config path relative to the root directory.
+/// Absolute paths are used as-is; relative paths are joined with root.
+fn resolve_path(root: &str, path: &str) -> std::path::PathBuf {
+    let p = Path::new(path);
+    if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        Path::new(root).join(p)
     }
 }
 

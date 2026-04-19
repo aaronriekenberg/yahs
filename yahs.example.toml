@@ -3,6 +3,13 @@
 #
 # Copy this file to yahs.toml and adjust to your needs.
 
+# ── Global settings ────────────────────────────────────────────────────────
+
+# Root directory used as the base for static file serving and error file paths.
+# Relative paths in [error_files] and static_files locations are resolved
+# against this directory.  Defaults to "." (the working directory).
+root = "./www"
+
 # ── Global server settings ─────────────────────────────────────────────────
 
 [server]
@@ -79,13 +86,12 @@ path = "/api"
   [locations.handler.extra_request_headers]
   "X-Proxy" = "yahs"
 
-# Static file server — serve everything under /static/* from ./www.
+# Static file server — serve everything under /* from the top-level root directory.
 [[locations]]
 path = "/"
 
   [locations.handler]
   type             = "static_files"
-  root             = "./www"
   index            = ["index.html", "index.htm"]
   strip_prefix     = true
   cache_max_age_secs = 3600
@@ -114,10 +120,11 @@ path = "/"
 # When configured, requests that return 4xx or 5xx responses will have their
 # body replaced with the content of the specified HTML file.  Both entries
 # are optional; if omitted the default plain-text error response is returned.
+# Paths are resolved relative to the top-level `root` directory.
 #
 # [error_files]
-# client_error_file = "./errors/4xx.html"
+# client_error_file = "errors/4xx.html"
 # client_error_cache_max_age_secs = 0    # 0 = no-store (default)
 #
-# server_error_file = "./errors/5xx.html"
+# server_error_file = "errors/5xx.html"
 # server_error_cache_max_age_secs = 0    # 0 = no-store (default)
