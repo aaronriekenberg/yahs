@@ -319,7 +319,7 @@ pub struct UpstreamConfig {
     /// HTTP/2 keepalive PING interval in seconds for upstream connections
     /// (0 = disabled).  Only meaningful when `http2_prior_knowledge` is true
     /// or the upstream negotiates HTTP/2 via ALPN.
-    #[serde(default = "default_keepalive_timeout", alias = "http2_keepalive_interval_secs")]
+    #[serde(default = "default_keepalive_timeout")]
     pub http_keepalive_timeout_secs: u64,
 }
 
