@@ -1,17 +1,13 @@
-use uuid::Uuid;
+use std::sync::atomic::{AtomicU64, Ordering};
 
-/// A per-request unique ID.
-#[derive(Debug, Clone)]
-pub struct RequestId(pub String);
+/// A per-request unique ID, incrementing from 0.
+#[derive(Debug, Clone, Copy)]
+pub struct RequestId(pub u64);
 
 impl RequestId {
     pub fn new() -> Self {
-        Self(Uuid::new_v4().to_string())
-    }
-
-    #[allow(dead_code)]
-    pub fn as_str(&self) -> &str {
-        &self.0
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        Self(COUNTER.fetch_add(1, Ordering::Relaxed))
     }
 }
 

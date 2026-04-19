@@ -285,12 +285,14 @@ Every request emits a JSON line to stdout at `INFO` level:
 ```json
 {
   "timestamp": "2026-04-18T10:00:00.000Z",
-  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "request_id": 42,
+  "connection_id": 7,
   "remote_addr": "127.0.0.1:54321",
   "method": "GET",
   "uri": "/static/index.html",
   "http_version": "HTTP/1.1",
   "status": 200,
+  "request_bytes": 0,
   "response_bytes": 1234,
   "duration_ns": 420000,
   "request_headers": {

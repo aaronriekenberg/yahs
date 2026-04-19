@@ -8,8 +8,11 @@ pub struct AccessLogRecord {
     /// ISO-8601 timestamp when the request was received.
     pub timestamp: String,
 
-    /// Unique request ID.
-    pub request_id: String,
+    /// Monotonically incrementing request ID (starts at 0 per process).
+    pub request_id: u64,
+
+    /// Monotonically incrementing connection ID (starts at 0 per process).
+    pub connection_id: u64,
 
     /// Client IP address.
     pub remote_addr: String,
@@ -26,10 +29,13 @@ pub struct AccessLogRecord {
     /// HTTP status code of the response.
     pub status: u16,
 
-    /// Response body size in bytes.
+    /// Request body size in bytes (from `Content-Length`, 0 if absent).
+    pub request_bytes: u64,
+
+    /// Response body size in bytes (from `Content-Length`, 0 if absent).
     pub response_bytes: u64,
 
-    /// Total request processing time in milliseconds.
+    /// Total request processing time in nanoseconds.
     pub duration_ns: u128,
 
     /// All request headers.
@@ -76,12 +82,14 @@ mod tests {
     fn test_to_json_line_contains_structured_fields() {
         let record = AccessLogRecord {
             timestamp: "2026-04-18T17:13:43.366967+00:00".to_string(),
-            request_id: "98d3eb36-ce69-44f7-8479-7e8acb5916a7".to_string(),
+            request_id: 42,
+            connection_id: 7,
             remote_addr: "127.0.0.1:50003".to_string(),
             method: "GET".to_string(),
             uri: "/".to_string(),
             http_version: "HTTP/1.1".to_string(),
             status: 200,
+            request_bytes: 0,
             response_bytes: 12,
             duration_ns: 734_459,
             request_headers: BTreeMap::from([("accept".to_string(), vec!["*/*".to_string()])]),
@@ -97,7 +105,9 @@ mod tests {
         let parsed: serde_json::Value =
             serde_json::from_str(&line).expect("output should be valid JSON");
 
-        assert_eq!(parsed["request_id"], record.request_id);
+        assert_eq!(parsed["request_id"], 42);
+        assert_eq!(parsed["connection_id"], 7);
+        assert_eq!(parsed["request_bytes"], 0);
         assert_eq!(parsed["status"], 200);
         assert_eq!(parsed["request_headers"]["accept"][0], "*/*");
         assert_eq!(parsed["response_headers"]["content-type"][0], "text/html");

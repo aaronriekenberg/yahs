@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use anyhow::Result;
@@ -95,9 +96,10 @@ async fn route_request(
     handlers: Arc<HashMap<String, Arc<dyn Handler>>>,
     locations: Arc<Vec<LocationConfig>>,
     remote_addr: String,
+    connection_id: u64,
     access_log_enabled: bool,
 ) -> Response<BoxBody> {
-    let ctx = RequestContext::from_request(&req, &remote_addr);
+    let ctx = RequestContext::from_request(&req, &remote_addr, connection_id);
 
     let uri_path = req.uri().path().to_owned();
 
@@ -195,6 +197,8 @@ pub async fn run_server(config: Config) -> Result<()> {
 
     info!("yahs listening on {}", bind_addr);
 
+    static CONNECTION_COUNTER: AtomicU64 = AtomicU64::new(0);
+
     loop {
         tokio::select! {
             result = listener.accept() => {
@@ -210,6 +214,7 @@ pub async fn run_server(config: Config) -> Result<()> {
                 let handlers = handlers.clone();
                 let locations = locations.clone();
                 let remote_addr = peer_addr.to_string();
+                let connection_id = CONNECTION_COUNTER.fetch_add(1, Ordering::Relaxed);
                 let connection_permit = if let Some(limiter) = &connection_limiter {
                     match limiter.clone().try_acquire_owned() {
                         Ok(permit) => Some(permit),
@@ -271,6 +276,7 @@ pub async fn run_server(config: Config) -> Result<()> {
                                 handlers,
                                 locations,
                                 remote_addr,
+                                connection_id,
                                 access_log_enabled,
                             )
                             .await;
