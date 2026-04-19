@@ -17,7 +17,7 @@ written in Rust, inspired by nginx.
 | Hop-by-hop header stripping | ✅ |
 | Connect + request timeouts | ✅ |
 | Reused reverse-proxy client connection pool | ✅ |
-| Configurable TCP keepalive (server + proxy upstream) | ✅ |
+| Configurable TCP keepalive + TCP_NODELAY (server + proxy upstream) | ✅ |
 | Health / readiness endpoint | ✅ |
 | Custom HTML error pages (4xx / 5xx) | ✅ |
 | Structured JSON access logs | ✅ |
@@ -242,8 +242,10 @@ HTTP client and connection-pool settings are configured per upstream cluster:
 | `request_timeout_ms` | `30000` | Total request timeout in milliseconds (0 = no timeout) |
 | `max_idle_connections_per_host` | `32` | Max idle pooled connections per upstream host |
 | `http2_prior_knowledge` | `false` | Use HTTP/2 cleartext (h2c) for all upstream connections |
-| `tcp_keepalive_enabled` | `false` | Enable TCP keepalive probes for upstream sockets |
+| `tcp_nodelay` | `true` | Disable Nagle's algorithm on upstream sockets |
+| `tcp_keepalive_enabled` | `true` | Enable TCP keepalive probes for upstream sockets |
 | `tcp_keepalive_secs` | `15` | Upstream TCP keepalive probe idle time in seconds |
+| `http_keepalive_timeout_secs` | `0` | HTTP/2 PING interval in seconds (0 = disabled) |
 
 ```toml
 [[upstreams]]
@@ -252,8 +254,10 @@ strategy                      = "round_robin"
 request_timeout_ms            = 30000
 max_idle_connections_per_host = 32
 http2_prior_knowledge         = false
-tcp_keepalive_enabled         = false
+tcp_nodelay                   = true
+tcp_keepalive_enabled         = true
 tcp_keepalive_secs            = 15
+http_keepalive_timeout_secs   = 0
 
   [[upstreams.backends]]
   url = "http://127.0.0.1:3000"

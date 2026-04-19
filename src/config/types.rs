@@ -71,6 +71,11 @@ pub struct ServerConfig {
     #[serde(default = "default_keepalive_timeout")]
     pub http_keepalive_timeout_secs: u64,
 
+    /// Disable Nagle's algorithm on accepted client connections (recommended
+    /// for low-latency HTTP/1.1 and HTTP/2 workloads).
+    #[serde(default = "default_true")]
+    pub tcp_nodelay: bool,
+
     /// Enable TCP keepalive probes on accepted client connections.
     #[serde(default = "default_true")]
     pub tcp_keepalive_enabled: bool,
@@ -297,6 +302,11 @@ pub struct UpstreamConfig {
     /// All upstream backends must support HTTP/2 without TLS negotiation.
     #[serde(default)]
     pub http2_prior_knowledge: bool,
+
+    /// Disable Nagle's algorithm on upstream connections (recommended for
+    /// low-latency proxy workloads).
+    #[serde(default = "default_true")]
+    pub tcp_nodelay: bool,
 
     /// Enable TCP keepalive probes for upstream connections.
     #[serde(default = "default_true")]

@@ -30,6 +30,9 @@ tcp_keepalive_enabled = true
 
 # TCP keepalive probe idle time in seconds.
 tcp_keepalive_secs = 15
+
+# Disable Nagle's algorithm on accepted client connections.
+tcp_nodelay = true
 # [server.tls]
 # cert_path = "/etc/ssl/certs/server.crt"
 # key_path  = "/etc/ssl/private/server.key"
@@ -53,6 +56,7 @@ max_idle_connections_per_host = 32
 http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
 tcp_keepalive_enabled = true
 tcp_keepalive_secs = 15
+tcp_nodelay = true
 http_keepalive_timeout_secs = 0  # HTTP/2 PING interval in seconds (0 = disabled)
 
   [[upstreams.backends]]

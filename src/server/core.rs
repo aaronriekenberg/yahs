@@ -176,6 +176,7 @@ pub async fn run_server(config: Config) -> Result<()> {
     let http_keepalive_timeout = Duration::from_secs(config.server.http_keepalive_timeout_secs);
     let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
     let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
+    let server_tcp_nodelay = config.server.tcp_nodelay;
 
     let error_files =
         ErrorFileStore::from_config(config.error_files.as_ref(), &config.root).await?;
@@ -228,6 +229,11 @@ pub async fn run_server(config: Config) -> Result<()> {
                     && let Err(e) = set_tcp_keepalive(&stream, server_tcp_keepalive)
                 {
                     warn!("Failed to set TCP keepalive for {}: {}", remote_addr, e);
+                }
+                if server_tcp_nodelay
+                    && let Err(e) = stream.set_nodelay(true)
+                {
+                    warn!("Failed to set TCP_NODELAY for {}: {}", remote_addr, e);
                 }
 
                 tokio::spawn(async move {
