@@ -8,7 +8,7 @@ use tokio::io::AsyncReadExt;
 use tracing::{debug, warn};
 
 use crate::compression::negotiate_encoding;
-use crate::config::StaticFilesConfig;
+use crate::config::{PrecompressedEncoding, StaticFilesConfig};
 use crate::error::AppError;
 use crate::handler::{Handler, HandlerResponse, empty_body, stream_body};
 use crate::server::state::AppState;
@@ -96,16 +96,21 @@ impl Handler for StaticFilesHandler {
             .and_then(|v| v.to_str().ok())
             .map(|s| s.to_owned());
 
-        // Try to serve a precompressed variant first when the feature is enabled
-        // and the client advertises an acceptable encoding.
-        if self.config.precompressed
-            && let Some(encoding) =
-                negotiate_encoding(accept_encoding.as_deref(), &self.config.encodings)
-        {
+        // Negotiate precompressed encoding once; pass it through so that both
+        // direct-file and index-file lookups can serve precompressed variants.
+        let negotiated = if self.config.precompressed {
+            negotiate_encoding(accept_encoding.as_deref(), &self.config.encodings)
+        } else {
+            None
+        };
+
+        // For non-directory requests try the precompressed variant directly.
+        // (Directories are handled inside serve_index_or_404 below.)
+        if let Some(encoding) = negotiated {
             let compressed_path = append_extension(&file_path, encoding.extension());
             if compressed_path.is_file() {
                 return self
-                    .serve_file(
+                    .serve_regular_file(
                         &req,
                         &compressed_path,
                         Some(encoding.content_encoding()),
@@ -116,8 +121,10 @@ impl Handler for StaticFilesHandler {
             }
         }
 
-        // Fall back to the uncompressed file.
-        self.serve_file(&req, &file_path, None, detect_mime(&file_path), &decoded_rel)
+        // Serve the file (or resolve to an index file if it is a directory).
+        // Pass the negotiated encoding so that index-file resolution can also
+        // probe for precompressed index variants (e.g. index.html.zst).
+        self.serve_file(&req, &file_path, negotiated, &decoded_rel)
             .await
     }
 }
@@ -168,26 +175,25 @@ impl StaticFilesHandler {
         &self,
         req: &Request<Incoming>,
         path: &Path,
-        content_encoding: Option<&str>,
-        content_type: &str,
+        negotiated: Option<PrecompressedEncoding>,
         rel_path: &str,
     ) -> Result<HandlerResponse, AppError> {
         let metadata = match tokio::fs::metadata(path).await {
             Ok(m) => m,
             Err(_) => {
-                return self.serve_index_or_404(req, path, content_encoding, rel_path).await;
+                return self.serve_index_or_404(req, path, negotiated, rel_path).await;
             }
         };
 
         if metadata.is_dir() {
-            return self.serve_index_or_404(req, path, content_encoding, rel_path).await;
+            return self.serve_index_or_404(req, path, negotiated, rel_path).await;
         }
 
         if !metadata.is_file() {
             return Err(AppError::NotFound);
         }
 
-        self.serve_regular_file(req, path, content_encoding, content_type, rel_path)
+        self.serve_regular_file(req, path, None, detect_mime(path), rel_path)
             .await
     }
 
@@ -289,7 +295,7 @@ impl StaticFilesHandler {
         &self,
         req: &Request<Incoming>,
         dir_path: &Path,
-        content_encoding: Option<&str>,
+        negotiated: Option<PrecompressedEncoding>,
         rel_path: &str,
     ) -> Result<HandlerResponse, AppError> {
         let dir_path = if dir_path.is_file() {
@@ -300,12 +306,30 @@ impl StaticFilesHandler {
 
         for index in &self.config.index {
             let index_path = dir_path.join(index);
-            if index_path.is_file() {
-                let mime = detect_mime(&index_path);
-                return self
-                    .serve_regular_file(req, &index_path, content_encoding, mime, rel_path)
-                    .await;
+            if !index_path.is_file() {
+                continue;
             }
+            let mime = detect_mime(&index_path);
+
+            // Try the precompressed variant of the index file first.
+            if let Some(encoding) = negotiated {
+                let compressed_index = append_extension(&index_path, encoding.extension());
+                if compressed_index.is_file() {
+                    return self
+                        .serve_regular_file(
+                            req,
+                            &compressed_index,
+                            Some(encoding.content_encoding()),
+                            mime,
+                            rel_path,
+                        )
+                        .await;
+                }
+            }
+
+            return self
+                .serve_regular_file(req, &index_path, None, mime, rel_path)
+                .await;
         }
 
         Err(AppError::NotFound)
