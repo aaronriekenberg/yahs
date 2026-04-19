@@ -357,7 +357,10 @@ client_error_cache_max_age_secs = 3600
         );
         let f = write_config(&cfg_content);
         let config = load_config(f.path()).unwrap();
-        let ef = config.error_files.as_ref().expect("error_files should be set");
+        let ef = config
+            .error_files
+            .as_ref()
+            .expect("error_files should be set");
         assert_eq!(ef.client_error_file.as_deref(), Some(path.as_str()));
         assert_eq!(ef.client_error_cache_max_age_secs, 3600);
         assert!(ef.server_error_file.is_none());
@@ -393,7 +396,10 @@ server_error_cache_max_age_secs = 0
         );
         let f = write_config(&cfg_content);
         let config = load_config(f.path()).unwrap();
-        let ef = config.error_files.as_ref().expect("error_files should be set");
+        let ef = config
+            .error_files
+            .as_ref()
+            .expect("error_files should be set");
         assert_eq!(ef.client_error_file.as_deref(), Some(client_path.as_str()));
         assert_eq!(ef.client_error_cache_max_age_secs, 60);
         assert_eq!(ef.server_error_file.as_deref(), Some(server_path.as_str()));

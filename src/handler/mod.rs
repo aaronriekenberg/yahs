@@ -67,10 +67,7 @@ pub fn error_response(error: &AppError) -> HandlerResponse {
 pub fn error_file_response(status: StatusCode, entry: &ErrorFileEntry) -> HandlerResponse {
     Response::builder()
         .status(status)
-        .header(
-            hyper::header::CONTENT_TYPE,
-            "text/html; charset=utf-8",
-        )
+        .header(hyper::header::CONTENT_TYPE, "text/html; charset=utf-8")
         .header(hyper::header::CACHE_CONTROL, entry.cache_control.as_str())
         .body(full_body(entry.body.clone()))
         .unwrap()

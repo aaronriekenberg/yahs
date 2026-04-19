@@ -80,7 +80,10 @@ impl Handler for StaticFilesHandler {
 
         // Reject blocked paths before touching the filesystem.
         let decoded_rel = percent_decode(rel_path);
-        if self.blocked_set.is_match(decoded_rel.trim_start_matches('/')) {
+        if self
+            .blocked_set
+            .is_match(decoded_rel.trim_start_matches('/'))
+        {
             return Err(AppError::NotFound);
         }
 
@@ -181,12 +184,16 @@ impl StaticFilesHandler {
         let metadata = match tokio::fs::metadata(path).await {
             Ok(m) => m,
             Err(_) => {
-                return self.serve_index_or_404(req, path, negotiated, rel_path).await;
+                return self
+                    .serve_index_or_404(req, path, negotiated, rel_path)
+                    .await;
             }
         };
 
         if metadata.is_dir() {
-            return self.serve_index_or_404(req, path, negotiated, rel_path).await;
+            return self
+                .serve_index_or_404(req, path, negotiated, rel_path)
+                .await;
         }
 
         if !metadata.is_file() {

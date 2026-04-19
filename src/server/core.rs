@@ -70,10 +70,7 @@ fn match_location<'a>(
 }
 
 /// Replace a 4xx/5xx response with an error-file body when one is configured.
-fn maybe_replace_with_error_file(
-    resp: HandlerResponse,
-    store: &ErrorFileStore,
-) -> HandlerResponse {
+fn maybe_replace_with_error_file(resp: HandlerResponse, store: &ErrorFileStore) -> HandlerResponse {
     let status = resp.status();
     if status.is_client_error() {
         if let Some(entry) = &store.client_error {

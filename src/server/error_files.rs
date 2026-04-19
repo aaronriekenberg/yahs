@@ -35,9 +35,9 @@ impl ErrorFileStore {
 
         let client_error = match &cfg.client_error_file {
             Some(path) => {
-                let body = tokio::fs::read(path)
-                    .await
-                    .map_err(|e| anyhow::anyhow!("Failed to read client_error_file '{}': {}", path, e))?;
+                let body = tokio::fs::read(path).await.map_err(|e| {
+                    anyhow::anyhow!("Failed to read client_error_file '{}': {}", path, e)
+                })?;
                 Some(ErrorFileEntry {
                     body: Bytes::from(body),
                     cache_control: cache_control_value(cfg.client_error_cache_max_age_secs),
@@ -48,9 +48,9 @@ impl ErrorFileStore {
 
         let server_error = match &cfg.server_error_file {
             Some(path) => {
-                let body = tokio::fs::read(path)
-                    .await
-                    .map_err(|e| anyhow::anyhow!("Failed to read server_error_file '{}': {}", path, e))?;
+                let body = tokio::fs::read(path).await.map_err(|e| {
+                    anyhow::anyhow!("Failed to read server_error_file '{}': {}", path, e)
+                })?;
                 Some(ErrorFileEntry {
                     body: Bytes::from(body),
                     cache_control: cache_control_value(cfg.server_error_cache_max_age_secs),

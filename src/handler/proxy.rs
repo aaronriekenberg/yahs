@@ -152,13 +152,10 @@ impl Handler for ReverseProxyHandler {
 
         let request_timeout = Duration::from_millis(self.config.request_timeout_ms);
 
-        let response = tokio::time::timeout(
-            request_timeout,
-            self.client.request(forward_req),
-        )
-        .await
-        .map_err(|_| AppError::upstream("Request to upstream timed out"))?
-        .map_err(|e| AppError::upstream(e.to_string()))?;
+        let response = tokio::time::timeout(request_timeout, self.client.request(forward_req))
+            .await
+            .map_err(|_| AppError::upstream("Request to upstream timed out"))?
+            .map_err(|e| AppError::upstream(e.to_string()))?;
 
         // Convert the upstream response.
         let (resp_parts, resp_body) = response.into_parts();
@@ -182,9 +179,7 @@ impl Handler for ReverseProxyHandler {
         // Stream the upstream body directly to the client without buffering it
         // in memory.  Map the hyper body error to std::io::Error to satisfy
         // BoxBody's error type.
-        let streaming_body = resp_body
-            .map_err(|e| std::io::Error::other(e))
-            .boxed();
+        let streaming_body = resp_body.map_err(|e| std::io::Error::other(e)).boxed();
 
         let final_resp = resp_builder
             .body(streaming_body)

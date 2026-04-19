@@ -251,7 +251,10 @@ pub struct ReverseProxyConfig {
     pub request_timeout_ms: u64,
 
     /// Maximum number of idle pooled connections per upstream host.
-    #[serde(default = "default_proxy_max_connection_pool_size", alias = "max_connection_pool_size")]
+    #[serde(
+        default = "default_proxy_max_connection_pool_size",
+        alias = "max_connection_pool_size"
+    )]
     pub max_idle_connections_per_host: usize,
 
     /// Use HTTP/2 cleartext (h2c / prior knowledge) for upstream connections.
