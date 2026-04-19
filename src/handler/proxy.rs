@@ -15,7 +15,7 @@ use tracing::debug;
 
 use crate::config::{BackendConfig, LoadBalancingStrategy, ReverseProxyConfig, UpstreamConfig};
 use crate::error::AppError;
-use crate::handler::{BoxBody, Handler, HandlerResponse, full_body};
+use crate::handler::{BoxBody, Handler, HandlerResponse};
 use crate::server::state::AppState;
 
 /// Headers that must not be forwarded as-is.
@@ -163,12 +163,6 @@ impl Handler for ReverseProxyHandler {
         // Convert the upstream response.
         let (resp_parts, resp_body) = response.into_parts();
 
-        let resp_bytes = tokio::time::timeout(request_timeout, resp_body.collect())
-            .await
-            .map_err(|_| AppError::upstream("Reading upstream body timed out"))?
-            .map_err(|e| AppError::upstream(e.to_string()))?
-            .to_bytes();
-
         let mut resp_builder = Response::builder().status(resp_parts.status);
 
         for (name, value) in &resp_parts.headers {
@@ -185,8 +179,15 @@ impl Handler for ReverseProxyHandler {
         };
         resp_builder = resp_builder.header(hyper::header::CACHE_CONTROL, cache_control);
 
+        // Stream the upstream body directly to the client without buffering it
+        // in memory.  Map the hyper body error to std::io::Error to satisfy
+        // BoxBody's error type.
+        let streaming_body = resp_body
+            .map_err(|e| std::io::Error::other(e))
+            .boxed();
+
         let final_resp = resp_builder
-            .body(full_body(resp_bytes))
+            .body(streaming_body)
             .map_err(|e| AppError::upstream(e.to_string()))?;
 
         Ok(final_resp)
