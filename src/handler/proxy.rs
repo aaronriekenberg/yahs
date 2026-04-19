@@ -53,7 +53,10 @@ impl ReverseProxyHandler {
         }
 
         let mut client_builder = Client::builder(TokioExecutor::new());
-        client_builder.pool_max_idle_per_host(config.max_connection_pool_size);
+        client_builder.pool_max_idle_per_host(config.max_idle_connections_per_host);
+        if config.http2_prior_knowledge {
+            client_builder.http2_only(true);
+        }
         let client = client_builder.build(connector);
 
         Self {
@@ -147,11 +150,10 @@ impl Handler for ReverseProxyHandler {
             .body(Full::new(body_bytes).map_err(|e| match e {}).boxed())
             .map_err(|e| AppError::upstream(e.to_string()))?;
 
-        let connect_timeout = Duration::from_millis(self.config.connect_timeout_ms);
         let request_timeout = Duration::from_millis(self.config.request_timeout_ms);
 
         let response = tokio::time::timeout(
-            connect_timeout + request_timeout,
+            request_timeout,
             self.client.request(forward_req),
         )
         .await

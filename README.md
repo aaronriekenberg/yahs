@@ -169,11 +169,11 @@ Forwards requests to an upstream cluster.
 |---|---|---|
 | `upstream` | *(required)* | Name of the upstream cluster |
 | `strip_prefix` | `true` | Remove location prefix before forwarding |
-| `connect_timeout_ms` | `5000` | Connection timeout |
 | `request_timeout_ms` | `30000` | Total request timeout |
-| `max_connection_pool_size` | `32` | Max idle pooled upstream connections per host |
+| `max_idle_connections_per_host` | `32` | Max idle pooled upstream connections per host |
+| `http2_prior_knowledge` | `false` | Use HTTP/2 cleartext (h2c) for upstream connections |
 | `tcp_keepalive_enabled` | `false` | Enable TCP keepalive for upstream sockets |
-| `tcp_keepalive_secs` | `75` | Upstream TCP keepalive probe idle time |
+| `tcp_keepalive_secs` | `15` | Upstream TCP keepalive probe idle time |
 | `cache_max_age_secs` | `0` | Sets proxied response `Cache-Control` (`no-store` when `0`, else `public, max-age=N`) |
 | `extra_request_headers` | `{}` | Headers injected into the forwarded request |
 | `remove_request_headers` | `[]` | Request headers stripped before forwarding |

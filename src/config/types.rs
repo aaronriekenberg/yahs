@@ -71,7 +71,7 @@ pub struct ServerConfig {
     pub tcp_keepalive_enabled: bool,
 
     /// TCP keepalive probe idle time in seconds for accepted client connections.
-    #[serde(default = "default_keepalive_timeout")]
+    #[serde(default = "default_tcp_keepalive_secs")]
     pub tcp_keepalive_secs: u64,
 
     /// Optional TLS configuration.
@@ -84,6 +84,10 @@ fn default_server_name() -> String {
 
 fn default_keepalive_timeout() -> u64 {
     75
+}
+
+fn default_tcp_keepalive_secs() -> u64 {
+    15
 }
 
 /// TLS configuration.
@@ -242,24 +246,25 @@ pub struct ReverseProxyConfig {
     #[serde(default = "default_true")]
     pub strip_prefix: bool,
 
-    /// Connect timeout in milliseconds.
-    #[serde(default = "default_connect_timeout_ms")]
-    pub connect_timeout_ms: u64,
-
     /// Request timeout in milliseconds (0 = no timeout).
     #[serde(default = "default_request_timeout_ms")]
     pub request_timeout_ms: u64,
 
     /// Maximum number of idle pooled connections per upstream host.
-    #[serde(default = "default_proxy_max_connection_pool_size")]
-    pub max_connection_pool_size: usize,
+    #[serde(default = "default_proxy_max_connection_pool_size", alias = "max_connection_pool_size")]
+    pub max_idle_connections_per_host: usize,
+
+    /// Use HTTP/2 cleartext (h2c / prior knowledge) for upstream connections.
+    /// All upstream backends must support HTTP/2 without TLS negotiation.
+    #[serde(default)]
+    pub http2_prior_knowledge: bool,
 
     /// Enable TCP keepalive probes for upstream connections.
     #[serde(default)]
     pub tcp_keepalive_enabled: bool,
 
     /// TCP keepalive probe idle time in seconds for upstream connections.
-    #[serde(default = "default_keepalive_timeout")]
+    #[serde(default = "default_tcp_keepalive_secs")]
     pub tcp_keepalive_secs: u64,
 
     /// Cache-Control max-age in seconds for proxied responses (0 = `no-store`).
@@ -273,10 +278,6 @@ pub struct ReverseProxyConfig {
     /// Request headers to remove before forwarding.
     #[serde(default, alias = "remove_headers")]
     pub remove_request_headers: Vec<String>,
-}
-
-fn default_connect_timeout_ms() -> u64 {
-    5000
 }
 
 fn default_request_timeout_ms() -> u64 {

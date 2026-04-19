@@ -94,7 +94,7 @@ type = "health"
         assert_eq!(config.server.max_connections, 0);
         assert_eq!(config.server.http_keepalive_timeout_secs, 75);
         assert!(!config.server.tcp_keepalive_enabled);
-        assert_eq!(config.server.tcp_keepalive_secs, 75);
+        assert_eq!(config.server.tcp_keepalive_secs, 15);
         assert_eq!(config.locations.len(), 1);
         assert_eq!(config.locations[0].path, "/health");
     }
@@ -139,7 +139,7 @@ path = "/api"
 [locations.handler]
 type = "reverse_proxy"
 upstream = "backend"
-max_connection_pool_size = 50
+max_idle_connections_per_host = 50
 tcp_keepalive_enabled = true
 tcp_keepalive_secs = 42
 cache_max_age_secs = 120
@@ -154,7 +154,7 @@ remove_request_headers = ["x-internal-token"]
         assert_eq!(config.upstreams[0].name, "backend");
         match &config.locations[0].handler {
             yahs::config::HandlerConfig::ReverseProxy(proxy) => {
-                assert_eq!(proxy.max_connection_pool_size, 50);
+                assert_eq!(proxy.max_idle_connections_per_host, 50);
                 assert!(proxy.tcp_keepalive_enabled);
                 assert_eq!(proxy.tcp_keepalive_secs, 42);
                 assert_eq!(proxy.cache_max_age_secs, 120);

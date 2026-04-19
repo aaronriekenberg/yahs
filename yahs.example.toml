@@ -22,9 +22,7 @@ http_keepalive_timeout_secs = 75
 tcp_keepalive_enabled = false
 
 # TCP keepalive probe idle time in seconds.
-tcp_keepalive_secs = 75
-
-# Uncomment to enable TLS:
+tcp_keepalive_secs = 15
 # [server.tls]
 # cert_path = "/etc/ssl/certs/server.crt"
 # key_path  = "/etc/ssl/private/server.key"
@@ -70,11 +68,11 @@ path = "/api"
   type              = "reverse_proxy"
   upstream          = "api_backend"
   strip_prefix      = true    # remove "/api" before forwarding
-  connect_timeout_ms = 5000
   request_timeout_ms = 30000
-  max_connection_pool_size = 32
+  max_idle_connections_per_host = 32
+  http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
   tcp_keepalive_enabled = false
-  tcp_keepalive_secs = 75
+  tcp_keepalive_secs = 15
   cache_max_age_secs = 0
   remove_request_headers = ["x-internal-token"]
 
