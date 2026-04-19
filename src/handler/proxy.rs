@@ -179,7 +179,7 @@ impl Handler for ReverseProxyHandler {
         // Stream the upstream body directly to the client without buffering it
         // in memory.  Map the hyper body error to std::io::Error to satisfy
         // BoxBody's error type.
-        let streaming_body = resp_body.map_err(|e| std::io::Error::other(e)).boxed();
+        let streaming_body = resp_body.map_err(std::io::Error::other).boxed();
 
         let final_resp = resp_builder
             .body(streaming_body)

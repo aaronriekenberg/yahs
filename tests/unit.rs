@@ -1,8 +1,8 @@
-/// Integration tests and unit tests for yahs.
-///
-/// Unit tests for config parsing, compression negotiation, and path helpers
-/// are included here.  Integration tests that start an actual server are in
-/// the separate `tests/integration.rs` file.
+//! Integration tests and unit tests for yahs.
+//!
+//! Unit tests for config parsing, compression negotiation, and path helpers
+//! are included here.  Integration tests that start an actual server are in
+//! the separate `tests/integration.rs` file.
 
 #[cfg(test)]
 mod compression_tests {

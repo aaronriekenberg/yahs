@@ -76,10 +76,10 @@ fn maybe_replace_with_error_file(resp: HandlerResponse, store: &ErrorFileStore) 
         if let Some(entry) = &store.client_error {
             return error_file_response(status, entry);
         }
-    } else if status.is_server_error() {
-        if let Some(entry) = &store.server_error {
-            return error_file_response(status, entry);
-        }
+    } else if status.is_server_error()
+        && let Some(entry) = &store.server_error
+    {
+        return error_file_response(status, entry);
     }
     resp
 }
