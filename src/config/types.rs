@@ -72,7 +72,7 @@ pub struct ServerConfig {
     pub http_keepalive_timeout_secs: u64,
 
     /// Enable TCP keepalive probes on accepted client connections.
-    #[serde(default)]
+    #[serde(default = "default_true")]
     pub tcp_keepalive_enabled: bool,
 
     /// TCP keepalive probe idle time in seconds for accepted client connections.
@@ -92,7 +92,7 @@ fn default_root() -> String {
 }
 
 fn default_keepalive_timeout() -> u64 {
-    75
+    20
 }
 
 fn default_tcp_keepalive_secs() -> u64 {
@@ -299,12 +299,18 @@ pub struct UpstreamConfig {
     pub http2_prior_knowledge: bool,
 
     /// Enable TCP keepalive probes for upstream connections.
-    #[serde(default)]
+    #[serde(default = "default_true")]
     pub tcp_keepalive_enabled: bool,
 
     /// TCP keepalive probe idle time in seconds for upstream connections.
     #[serde(default = "default_tcp_keepalive_secs")]
     pub tcp_keepalive_secs: u64,
+
+    /// HTTP/2 keepalive PING interval in seconds for upstream connections
+    /// (0 = disabled).  Only meaningful when `http2_prior_knowledge` is true
+    /// or the upstream negotiates HTTP/2 via ALPN.
+    #[serde(default, alias = "http2_keepalive_interval_secs")]
+    pub http_keepalive_timeout_secs: u64,
 }
 
 fn default_request_timeout_ms() -> u64 {

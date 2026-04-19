@@ -23,10 +23,10 @@ server_name = "yahs/0.1"
 max_connections = 0
 
 # HTTP idle keepalive timeout in seconds.
-http_keepalive_timeout_secs = 75
+http_keepalive_timeout_secs = 20
 
 # Enable TCP keepalive probes on accepted client connections.
-tcp_keepalive_enabled = false
+tcp_keepalive_enabled = true
 
 # TCP keepalive probe idle time in seconds.
 tcp_keepalive_secs = 15
@@ -51,8 +51,9 @@ strategy = "round_robin"   # round_robin | ip_hash | random
 request_timeout_ms = 30000
 max_idle_connections_per_host = 32
 http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
-tcp_keepalive_enabled = false
+tcp_keepalive_enabled = true
 tcp_keepalive_secs = 15
+http_keepalive_timeout_secs = 0  # HTTP/2 PING interval in seconds (0 = disabled)
 
   [[upstreams.backends]]
   url    = "http://127.0.0.1:3000"
