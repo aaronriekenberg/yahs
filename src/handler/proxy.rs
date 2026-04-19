@@ -214,9 +214,9 @@ impl UpstreamRuntime {
             client_builder.http2_only(true);
         }
         if config.http_keepalive_timeout_secs > 0 {
-            client_builder.http2_keep_alive_interval(Some(Duration::from_secs(
-                config.http_keepalive_timeout_secs,
-            )));
+            let ka = Duration::from_secs(config.http_keepalive_timeout_secs);
+            client_builder.http2_keep_alive_interval(Some(ka));
+            client_builder.http2_keep_alive_timeout(ka);
             client_builder.http2_keep_alive_while_idle(true);
         }
         let client = client_builder.build(connector);
