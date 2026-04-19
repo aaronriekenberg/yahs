@@ -92,7 +92,7 @@ type = "health"
         let config = load_config(f.path()).unwrap();
         assert_eq!(config.server.bind, "127.0.0.1:0");
         assert_eq!(config.server.max_connections, 0);
-        assert_eq!(config.server.http_keepalive_timeout_secs, 20);
+        assert_eq!(config.server.http_keepalive_timeout_secs, 60);
         assert!(config.server.tcp_keepalive_enabled);
         assert_eq!(config.server.tcp_keepalive_secs, 15);
         assert_eq!(config.locations.len(), 1);
