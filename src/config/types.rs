@@ -252,7 +252,37 @@ pub struct ReverseProxyConfig {
     #[serde(default = "default_true")]
     pub strip_prefix: bool,
 
-    /// Request timeout in milliseconds (0 = no timeout).
+    /// Cache-Control max-age in seconds for proxied responses (0 = `no-store`).
+    #[serde(default = "default_proxy_cache_max_age")]
+    pub cache_max_age_secs: u64,
+
+    /// Extra request headers to forward (or override).
+    #[serde(default, alias = "extra_headers")]
+    pub extra_request_headers: HashMap<String, String>,
+
+    /// Request headers to remove before forwarding.
+    #[serde(default, alias = "remove_headers")]
+    pub remove_request_headers: Vec<String>,
+}
+
+fn default_proxy_cache_max_age() -> u64 {
+    0
+}
+
+/// An upstream cluster with one or more backends.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpstreamConfig {
+    /// Unique name referenced by proxy locations.
+    pub name: String,
+
+    /// Load balancing strategy.
+    #[serde(default)]
+    pub strategy: LoadBalancingStrategy,
+
+    /// Backend server list.
+    pub backends: Vec<BackendConfig>,
+
+    /// Request timeout in milliseconds for proxy requests to this upstream (0 = no timeout).
     #[serde(default = "default_request_timeout_ms")]
     pub request_timeout_ms: u64,
 
@@ -275,18 +305,6 @@ pub struct ReverseProxyConfig {
     /// TCP keepalive probe idle time in seconds for upstream connections.
     #[serde(default = "default_tcp_keepalive_secs")]
     pub tcp_keepalive_secs: u64,
-
-    /// Cache-Control max-age in seconds for proxied responses (0 = `no-store`).
-    #[serde(default = "default_proxy_cache_max_age")]
-    pub cache_max_age_secs: u64,
-
-    /// Extra request headers to forward (or override).
-    #[serde(default, alias = "extra_headers")]
-    pub extra_request_headers: HashMap<String, String>,
-
-    /// Request headers to remove before forwarding.
-    #[serde(default, alias = "remove_headers")]
-    pub remove_request_headers: Vec<String>,
 }
 
 fn default_request_timeout_ms() -> u64 {
@@ -295,24 +313,6 @@ fn default_request_timeout_ms() -> u64 {
 
 fn default_proxy_max_connection_pool_size() -> usize {
     32
-}
-
-fn default_proxy_cache_max_age() -> u64 {
-    0
-}
-
-/// An upstream cluster with one or more backends.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpstreamConfig {
-    /// Unique name referenced by proxy locations.
-    pub name: String,
-
-    /// Load balancing strategy.
-    #[serde(default)]
-    pub strategy: LoadBalancingStrategy,
-
-    /// Backend server list.
-    pub backends: Vec<BackendConfig>,
 }
 
 /// Supported load balancing strategies.

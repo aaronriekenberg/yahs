@@ -181,11 +181,6 @@ Forwards requests to an upstream cluster.
 |---|---|---|
 | `upstream` | *(required)* | Name of the upstream cluster |
 | `strip_prefix` | `true` | Remove location prefix before forwarding |
-| `request_timeout_ms` | `30000` | Total request timeout |
-| `max_idle_connections_per_host` | `32` | Max idle pooled upstream connections per host |
-| `http2_prior_knowledge` | `false` | Use HTTP/2 cleartext (h2c) for upstream connections |
-| `tcp_keepalive_enabled` | `false` | Enable TCP keepalive for upstream sockets |
-| `tcp_keepalive_secs` | `15` | Upstream TCP keepalive probe idle time |
 | `cache_max_age_secs` | `0` | Sets proxied response `Cache-Control` (`no-store` when `0`, else `public, max-age=N`) |
 | `extra_request_headers` | `{}` | Headers injected into the forwarded request |
 | `remove_request_headers` | `[]` | Request headers stripped before forwarding |
@@ -237,6 +232,32 @@ key within it) leaves the corresponding error responses unchanged.
 | `random` | Random selection |
 
 Backends support a `weight` field (default `1`) for weighted round-robin.
+
+### Upstream connection settings
+
+HTTP client and connection-pool settings are configured per upstream cluster:
+
+| Key | Default | Description |
+|---|---|---|
+| `request_timeout_ms` | `30000` | Total request timeout in milliseconds (0 = no timeout) |
+| `max_idle_connections_per_host` | `32` | Max idle pooled connections per upstream host |
+| `http2_prior_knowledge` | `false` | Use HTTP/2 cleartext (h2c) for all upstream connections |
+| `tcp_keepalive_enabled` | `false` | Enable TCP keepalive probes for upstream sockets |
+| `tcp_keepalive_secs` | `15` | Upstream TCP keepalive probe idle time in seconds |
+
+```toml
+[[upstreams]]
+name                          = "backend"
+strategy                      = "round_robin"
+request_timeout_ms            = 30000
+max_idle_connections_per_host = 32
+http2_prior_knowledge         = false
+tcp_keepalive_enabled         = false
+tcp_keepalive_secs            = 15
+
+  [[upstreams.backends]]
+  url = "http://127.0.0.1:3000"
+```
 
 ## Precompressed files
 

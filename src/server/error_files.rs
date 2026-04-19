@@ -42,7 +42,11 @@ impl ErrorFileStore {
             Some(path) => {
                 let full_path = resolve_path(root, path);
                 let body = tokio::fs::read(&full_path).await.map_err(|e| {
-                    anyhow::anyhow!("Failed to read client_error_file '{}': {}", full_path.display(), e)
+                    anyhow::anyhow!(
+                        "Failed to read client_error_file '{}': {}",
+                        full_path.display(),
+                        e
+                    )
                 })?;
                 Some(ErrorFileEntry {
                     body: Bytes::from(body),
@@ -56,7 +60,11 @@ impl ErrorFileStore {
             Some(path) => {
                 let full_path = resolve_path(root, path);
                 let body = tokio::fs::read(&full_path).await.map_err(|e| {
-                    anyhow::anyhow!("Failed to read server_error_file '{}': {}", full_path.display(), e)
+                    anyhow::anyhow!(
+                        "Failed to read server_error_file '{}': {}",
+                        full_path.display(),
+                        e
+                    )
                 })?;
                 Some(ErrorFileEntry {
                     body: Bytes::from(body),

@@ -48,6 +48,11 @@ access_log = true
 [[upstreams]]
 name     = "api_backend"
 strategy = "round_robin"   # round_robin | ip_hash | random
+request_timeout_ms = 30000
+max_idle_connections_per_host = 32
+http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
+tcp_keepalive_enabled = false
+tcp_keepalive_secs = 15
 
   [[upstreams.backends]]
   url    = "http://127.0.0.1:3000"
@@ -75,11 +80,6 @@ path = "/api"
   type              = "reverse_proxy"
   upstream          = "api_backend"
   strip_prefix      = true    # remove "/api" before forwarding
-  request_timeout_ms = 30000
-  max_idle_connections_per_host = 32
-  http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
-  tcp_keepalive_enabled = false
-  tcp_keepalive_secs = 15
   cache_max_age_secs = 0
   remove_request_headers = ["x-internal-token"]
 
