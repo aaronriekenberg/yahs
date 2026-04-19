@@ -26,10 +26,13 @@ pub struct StaticFilesHandler {
 }
 
 impl StaticFilesHandler {
-    pub fn new(config: StaticFilesConfig, location_prefix: String, root: &str) -> anyhow::Result<Self> {
-        let root = std::fs::canonicalize(root).map_err(|e| {
-            anyhow::anyhow!("Cannot canonicalize static root '{}': {}", root, e)
-        })?;
+    pub fn new(
+        config: StaticFilesConfig,
+        location_prefix: String,
+        root: &str,
+    ) -> anyhow::Result<Self> {
+        let root = std::fs::canonicalize(root)
+            .map_err(|e| anyhow::anyhow!("Cannot canonicalize static root '{}': {}", root, e))?;
 
         // Pre-compile blocked-paths glob set.
         let blocked_set = build_glob_set(&config.blocked_paths)?;

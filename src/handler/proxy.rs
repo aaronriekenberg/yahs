@@ -137,10 +137,11 @@ impl Handler for ReverseProxyHandler {
 
         let request_timeout = Duration::from_millis(self.upstream.request_timeout_ms);
 
-        let response = tokio::time::timeout(request_timeout, self.upstream.client.request(forward_req))
-            .await
-            .map_err(|_| AppError::upstream("Request to upstream timed out"))?
-            .map_err(|e| AppError::upstream(e.to_string()))?;
+        let response =
+            tokio::time::timeout(request_timeout, self.upstream.client.request(forward_req))
+                .await
+                .map_err(|_| AppError::upstream("Request to upstream timed out"))?
+                .map_err(|e| AppError::upstream(e.to_string()))?;
 
         // Convert the upstream response.
         let (resp_parts, resp_body) = response.into_parts();
