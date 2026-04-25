@@ -10,7 +10,7 @@ use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::Semaphore;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::config::{Config, HandlerConfig, LocationConfig};
 use crate::error::AppError;
@@ -284,9 +284,23 @@ pub async fn run_server(config: Config) -> Result<()> {
 
                     if let Err(e) = conn_builder.serve_connection(io, service).await
                     {
-                        // Ignore normal connection close errors.
-                        if !e.to_string().contains("connection closed") {
-                            warn!("Connection error: {}", e);
+                        if let Some(hyper_err) = e.downcast_ref::<hyper::Error>() {
+                            if hyper_err.is_incomplete_message() {
+                                // Client closed the connection before sending a
+                                // complete request — normal peer disconnect.
+                            } else if hyper_err.is_timeout() {
+                                // Client opened a connection but never sent a
+                                // request (e.g. browser pre-connect, idle
+                                // keep-alive expiry). Expected, not an error.
+                                debug!(
+                                    "Connection {}: header read timeout (idle client connection)",
+                                    connection_id
+                                );
+                            } else {
+                                warn!("Connection {} error: {}", connection_id, hyper_err);
+                            }
+                        } else {
+                            warn!("Connection {} error: {}", connection_id, e);
                         }
                     }
                 });
