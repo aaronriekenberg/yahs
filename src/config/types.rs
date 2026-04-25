@@ -77,7 +77,7 @@ pub struct ServerConfig {
 
     /// HTTP/2 keepalive ping timeout in seconds: how long to wait for a ping
     /// reply before closing the connection.
-    #[serde(default = "default_http_keepalive_timeout_secs")]
+    #[serde(default = "default_http2_keepalive_timeout_secs")]
     pub http2_keepalive_timeout_secs: u64,
 
     /// Disable Nagle's algorithm on accepted client connections (recommended
@@ -105,7 +105,7 @@ fn default_root() -> String {
     ".".to_string()
 }
 
-fn default_http_keepalive_timeout_secs() -> u64 {
+fn default_http2_keepalive_timeout_secs() -> u64 {
     20
 }
 
