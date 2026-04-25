@@ -2,46 +2,46 @@
 # Example configuration file
 #
 # Copy this file to yahs.toml and adjust to your needs.
+# Optional properties are commented out and show their default values.
 
 # ── Global settings ────────────────────────────────────────────────────────
 
 # Root directory used as the base for static file serving and error file paths.
 # Relative paths in [error_files] and static_files locations are resolved
-# against this directory.  Defaults to "." (the working directory).
-root = "./www"
+# against this directory.
+# root = "."
 
 # ── Global server settings ─────────────────────────────────────────────────
 
 [server]
-# Address and port to listen on.
+# Address and port to listen on.  REQUIRED.
 bind = "0.0.0.0:8080"
 
 # Value emitted in the `Server` response header.
-server_name = "yahs/0.1"
+# server_name = "yahs"
 
 # Maximum simultaneous connections (0 = unlimited).
-max_connections = 0
+# max_connections = 0
 
 # Enable HTTP/1.1 keepalive (persistent connections).
-http1_keepalive_enabled = true
+# http1_keepalive_enabled = true
 
 # HTTP/2 keepalive ping interval in seconds.
-# If omitted (or commented out), no HTTP/2 keepalive pings are sent.
-# http2_keepalive_interval_secs = 30
+# If omitted, no HTTP/2 keepalive pings are sent.
+# http2_keepalive_interval_secs =
 
-# HTTP keepalive timeout in seconds.
-# For HTTP/1.1 this is the idle connection timeout.
-# For HTTP/2 this is the ping timeout (how long to wait for a ping reply).
-http2_keepalive_timeout_secs = 20
+# HTTP/2 keepalive ping timeout in seconds.
+# http2_keepalive_timeout_secs = 20
 
 # Enable TCP keepalive probes on accepted client connections.
-tcp_keepalive_enabled = true
+# tcp_keepalive_enabled = true
 
 # TCP keepalive probe idle time in seconds (also used as the inter-probe interval).
-tcp_keepalive_secs = 15
+# tcp_keepalive_secs = 15
 
 # Disable Nagle's algorithm on accepted client connections.
-tcp_nodelay = true
+# tcp_nodelay = true
+
 # [server.tls]
 # cert_path = "/etc/ssl/certs/server.crt"
 # key_path  = "/etc/ssl/private/server.key"
@@ -50,38 +50,63 @@ tcp_nodelay = true
 
 [logging]
 # Tracing level: trace | debug | info | warn | error
-level = "info"
+# level = "info"
 
 # Emit a JSON access-log line for every request.
-access_log = true
+# access_log = true
+
+# Include request/response bodies in debug logs.
+# log_bodies = false
 
 # ── Upstreams (for reverse proxy) ──────────────────────────────────────────
 
 [[upstreams]]
+# Unique name referenced by reverse_proxy locations.  REQUIRED.
 name     = "api_backend"
-strategy = "round_robin"   # round_robin | ip_hash | random
-request_timeout_ms = 30000
-max_idle_connections_per_host = 32
-http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
-tcp_keepalive_enabled = true
-tcp_keepalive_secs = 15
-tcp_nodelay = true
-# http2_keepalive_interval_secs = 30  # if omitted, no HTTP/2 keepalive pings are sent
-http2_keepalive_timeout_secs = 20
+
+# Load balancing strategy: round_robin | ip_hash | random
+# strategy = "round_robin"
+
+# Request timeout in milliseconds (0 = no timeout).
+# request_timeout_ms = 30000
+
+# Maximum number of idle pooled connections per upstream host.
+# max_idle_connections_per_host = 32
+
+# Use HTTP/2 cleartext (h2c / prior knowledge) for all upstream connections.
+# http2_prior_knowledge = false
+
+# Disable Nagle's algorithm on upstream connections.
+# tcp_nodelay = true
+
+# Enable TCP keepalive probes for upstream connections.
+# tcp_keepalive_enabled = true
+
+# TCP keepalive probe idle time in seconds.
+# tcp_keepalive_secs = 15
+
+# HTTP/2 keepalive ping interval in seconds.
+# If omitted, no HTTP/2 keepalive pings are sent.
+# http2_keepalive_interval_secs =
+
+# HTTP/2 keepalive ping timeout in seconds.
+# http2_keepalive_timeout_secs = 20
 
   [[upstreams.backends]]
+  # Backend URL.  REQUIRED.
   url    = "http://127.0.0.1:3000"
-  weight = 1
+  # weight = 1
 
   [[upstreams.backends]]
   url    = "http://127.0.0.1:3001"
-  weight = 1
+  # weight = 1
 
 # ── Locations ──────────────────────────────────────────────────────────────
 # Locations are matched by longest-prefix first.
 
 # Health / readiness endpoint.
 [[locations]]
+# URL path prefix.  REQUIRED.
 path = "/health"
 
   [locations.handler]
@@ -92,54 +117,44 @@ path = "/health"
 path = "/api"
 
   [locations.handler]
+  # Handler type.  REQUIRED.
   type              = "reverse_proxy"
+  # Upstream cluster name.  REQUIRED.
   upstream          = "api_backend"
-  strip_prefix      = true    # remove "/api" before forwarding
-  cache_max_age_secs = 0
-  remove_request_headers = ["x-internal-token"]
+  # strip_prefix = true
+  # cache_max_age_secs = 0
+  # remove_request_headers = []
 
-  [locations.handler.extra_request_headers]
-  "X-Proxy" = "yahs"
+  # [locations.handler.extra_request_headers]
+  # "X-Proxy" = "yahs"
 
-# Static file server — serve everything under /* from the top-level root directory.
+# Static file server — serve everything under /* from the root directory.
 [[locations]]
 path = "/"
 
   [locations.handler]
-  type             = "static_files"
-  index            = ["index.html", "index.htm"]
-  strip_prefix     = true
-  cache_max_age_secs = 3600
-
-  # Paths blocked with 404 (glob patterns matched against the path relative to
-  # the location prefix).  A plain name like ".git" also matches any path
-  # segment, e.g. "repo/.git/config".
-  blocked_paths = [".git", ".env", ".htaccess"]
+  type = "static_files"
+  # index            = ["index.html"]
+  # strip_prefix     = true
+  # cache_max_age_secs = 3600
+  # precompressed    = true
+  # encodings        = ["zstd", "brotli", "gzip"]
+  # blocked_paths    = []
 
   # Per-path cache rules — first matching rule wins.
   # Patterns are globs matched against the path relative to the location prefix.
-  [[locations.handler.cache_rules]]
-  pattern      = "images/*.png"
-  max_age_secs = 120        # 2 minutes
-
-  [[locations.handler.cache_rules]]
-  pattern      = "**/*.js"
-  max_age_secs = 86400      # 1 day
-
-  # Serve precompressed files when the client accepts them.
-  precompressed    = true
-  # Preference order: try zstd first, then brotli, then gzip.
-  encodings        = ["zstd", "brotli", "gzip"]
+  # [[locations.handler.cache_rules]]
+  # pattern      = "images/*.png"
+  # max_age_secs = 120
 
 # ── Error files (optional) ─────────────────────────────────────────────────
 # When configured, requests that return 4xx or 5xx responses will have their
-# body replaced with the content of the specified HTML file.  Both entries
-# are optional; if omitted the default plain-text error response is returned.
+# body replaced with the content of the specified HTML file.
 # Paths are resolved relative to the top-level `root` directory.
 #
 # [error_files]
 # client_error_file = "errors/4xx.html"
-# client_error_cache_max_age_secs = 0    # 0 = no-store (default)
+# client_error_cache_max_age_secs = 0
 #
 # server_error_file = "errors/5xx.html"
-# server_error_cache_max_age_secs = 0    # 0 = no-store (default)
+# server_error_cache_max_age_secs = 0
