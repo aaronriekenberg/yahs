@@ -18,7 +18,6 @@ impl Handler for HealthHandler {
     ) -> Result<HandlerResponse, AppError> {
         let body_json = json!({
             "status": "ok",
-            "version": env!("CARGO_PKG_VERSION"),
         });
         let body_bytes =
             serde_json::to_vec(&body_json).map_err(|e| AppError::internal(e.to_string()))?;
