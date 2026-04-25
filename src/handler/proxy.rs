@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use http_body_util::{BodyExt, Full};
+use http_body_util::BodyExt;
 use hyper::{
     Request, Response, Uri,
     body::Incoming,
@@ -87,13 +87,6 @@ impl Handler for ReverseProxyHandler {
         // Build forwarded request.
         let (parts, body) = req.into_parts();
 
-        // Collect the incoming body.
-        let body_bytes = body
-            .collect()
-            .await
-            .map_err(|e| AppError::upstream(e.to_string()))?
-            .to_bytes();
-
         let mut builder = Request::builder().method(parts.method).uri(target_uri);
 
         // Copy headers, removing hop-by-hop and applying removes/overrides.
@@ -132,7 +125,7 @@ impl Handler for ReverseProxyHandler {
         }
 
         let forward_req = builder
-            .body(Full::new(body_bytes).map_err(|e| match e {}).boxed())
+            .body(body.map_err(std::io::Error::other).boxed())
             .map_err(|e| AppError::upstream(e.to_string()))?;
 
         let request_timeout = Duration::from_millis(self.upstream.request_timeout_ms);
