@@ -142,6 +142,9 @@ path = "/"
   # cache_max_age_secs = 3600
   # precompressed    = true
   # encodings        = ["zstd", "brotli", "gzip"]
+  # Paths blocked with 404 (glob patterns matched against the path relative to
+  # the location prefix).  A plain name like ".git" also matches any path
+  # segment, e.g. "repo/.git/config".
   # blocked_paths    = []
 
   # Per-path cache rules — first matching rule wins.
