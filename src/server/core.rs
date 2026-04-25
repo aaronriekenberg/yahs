@@ -180,7 +180,7 @@ pub async fn run_server(config: Config) -> Result<()> {
         .server
         .http2_keepalive_interval_secs
         .map(Duration::from_secs);
-    let http_keepalive_timeout = Duration::from_secs(config.server.http2_keepalive_timeout_secs);
+    let http2_keepalive_timeout = Duration::from_secs(config.server.http2_keepalive_timeout_secs);
     let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
     let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
     let server_tcp_nodelay = config.server.tcp_nodelay;
@@ -260,7 +260,7 @@ pub async fn run_server(config: Config) -> Result<()> {
                         .http2()
                         .timer(hyper_util::rt::TokioTimer::new())
                         .keep_alive_interval(http2_keepalive_interval)
-                        .keep_alive_timeout(http_keepalive_timeout);
+                        .keep_alive_timeout(http2_keepalive_timeout);
 
                     let service = hyper::service::service_fn(move |req| {
                         let state = state.clone();
