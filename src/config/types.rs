@@ -67,9 +67,18 @@ pub struct ServerConfig {
     #[serde(default)]
     pub max_connections: u32,
 
-    /// HTTP keepalive timeout in seconds.
-    #[serde(default = "default_keepalive_timeout")]
-    pub http_keepalive_timeout_secs: u64,
+    /// Enable HTTP/1.1 keepalive (persistent connections).
+    #[serde(default = "default_true")]
+    pub http1_keepalive_enabled: bool,
+
+    /// HTTP/2 keepalive ping interval in seconds. If absent, no pings are sent.
+    #[serde(default)]
+    pub http2_keepalive_interval_secs: Option<u64>,
+
+    /// HTTP/2 keepalive ping timeout in seconds: how long to wait for a ping
+    /// reply before closing the connection.
+    #[serde(default = "default_http2_keepalive_timeout_secs")]
+    pub http2_keepalive_timeout_secs: u64,
 
     /// Disable Nagle's algorithm on accepted client connections (recommended
     /// for low-latency HTTP/1.1 and HTTP/2 workloads).
@@ -96,8 +105,8 @@ fn default_root() -> String {
     ".".to_string()
 }
 
-fn default_keepalive_timeout() -> u64 {
-    60
+fn default_http2_keepalive_timeout_secs() -> u64 {
+    20
 }
 
 fn default_tcp_keepalive_secs() -> u64 {
@@ -316,11 +325,15 @@ pub struct UpstreamConfig {
     #[serde(default = "default_tcp_keepalive_secs")]
     pub tcp_keepalive_secs: u64,
 
-    /// HTTP/2 keepalive PING interval in seconds for upstream connections
-    /// (0 = disabled).  Only meaningful when `http2_prior_knowledge` is true
-    /// or the upstream negotiates HTTP/2 via ALPN.
-    #[serde(default = "default_keepalive_timeout")]
-    pub http_keepalive_timeout_secs: u64,
+    /// HTTP/2 keepalive ping interval in seconds for upstream connections.
+    /// If absent, no HTTP/2 keepalive pings are sent.
+    #[serde(default)]
+    pub http2_keepalive_interval_secs: Option<u64>,
+
+    /// HTTP/2 keepalive ping timeout in seconds for upstream connections:
+    /// how long to wait for a ping reply before closing the connection.
+    #[serde(default = "default_http2_keepalive_timeout_secs")]
+    pub http2_keepalive_timeout_secs: u64,
 }
 
 fn default_request_timeout_ms() -> u64 {

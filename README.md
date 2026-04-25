@@ -245,7 +245,8 @@ HTTP client and connection-pool settings are configured per upstream cluster:
 | `tcp_nodelay` | `true` | Disable Nagle's algorithm on upstream sockets |
 | `tcp_keepalive_enabled` | `true` | Enable TCP keepalive probes for upstream sockets |
 | `tcp_keepalive_secs` | `15` | Upstream TCP keepalive idle time and inter-probe interval in seconds (retries fixed at 9) |
-| `http_keepalive_timeout_secs` | `60` | HTTP/2 PING interval in seconds (0 = disabled) |
+| `http2_keepalive_interval_secs` | (none) | HTTP/2 keepalive ping interval in seconds; if omitted, no pings are sent |
+| `http2_keepalive_timeout_secs` | `20` | HTTP/2 keepalive ping timeout in seconds |
 
 ```toml
 [[upstreams]]
@@ -257,7 +258,8 @@ http2_prior_knowledge         = false
 tcp_nodelay                   = true
 tcp_keepalive_enabled         = true
 tcp_keepalive_secs            = 15
-http_keepalive_timeout_secs   = 60
+# http2_keepalive_interval_secs = 30
+http2_keepalive_timeout_secs  = 20
 
   [[upstreams.backends]]
   url = "http://127.0.0.1:3000"
