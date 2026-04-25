@@ -157,6 +157,7 @@ remove_request_headers = ["x-internal-token"]
         assert_eq!(config.upstreams.len(), 1);
         assert_eq!(config.upstreams[0].name, "backend");
         assert_eq!(config.upstreams[0].max_idle_connections_per_host, 50);
+        assert_eq!(config.upstreams[0].max_idle_connection_timeout_secs, 90);
         assert!(config.upstreams[0].tcp_keepalive_enabled);
         assert_eq!(config.upstreams[0].tcp_keepalive_secs, 42);
         assert_eq!(config.upstreams[0].http2_keepalive_interval_secs, None);

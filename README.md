@@ -241,6 +241,7 @@ HTTP client and connection-pool settings are configured per upstream cluster:
 |---|---|---|
 | `request_timeout_ms` | `30000` | Total request timeout in milliseconds (0 = no timeout) |
 | `max_idle_connections_per_host` | `32` | Max idle pooled connections per upstream host |
+| `max_idle_connection_timeout_secs` | `90` | How long an idle pooled connection is kept before being closed |
 | `http2_prior_knowledge` | `false` | Use HTTP/2 cleartext (h2c) for all upstream connections |
 | `tcp_nodelay` | `true` | Disable Nagle's algorithm on upstream sockets |
 | `tcp_keepalive_enabled` | `true` | Enable TCP keepalive probes for upstream sockets |

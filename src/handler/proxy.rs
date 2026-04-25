@@ -209,6 +209,7 @@ impl UpstreamRuntime {
         let mut client_builder = Client::builder(TokioExecutor::new());
         client_builder
             .pool_max_idle_per_host(config.max_idle_connections_per_host)
+            .pool_idle_timeout(Duration::from_secs(config.max_idle_connection_timeout_secs))
             .timer(hyper_util::rt::TokioTimer::new());
         if config.http2_prior_knowledge {
             client_builder.http2_only(true);

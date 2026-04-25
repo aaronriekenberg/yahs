@@ -307,6 +307,10 @@ pub struct UpstreamConfig {
     )]
     pub max_idle_connections_per_host: usize,
 
+    /// How long an idle pooled connection is kept before being closed, in seconds.
+    #[serde(default = "default_max_idle_connection_timeout_secs")]
+    pub max_idle_connection_timeout_secs: u64,
+
     /// Use HTTP/2 cleartext (h2c / prior knowledge) for upstream connections.
     /// All upstream backends must support HTTP/2 without TLS negotiation.
     #[serde(default)]
@@ -334,6 +338,10 @@ pub struct UpstreamConfig {
     /// how long to wait for a ping reply before closing the connection.
     #[serde(default = "default_http2_keepalive_timeout_secs")]
     pub http2_keepalive_timeout_secs: u64,
+}
+
+fn default_max_idle_connection_timeout_secs() -> u64 {
+    90
 }
 
 fn default_request_timeout_ms() -> u64 {
