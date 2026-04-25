@@ -66,7 +66,8 @@ http2_prior_knowledge = false  # enable h2c (cleartext HTTP/2) to upstream
 tcp_keepalive_enabled = true
 tcp_keepalive_secs = 15
 tcp_nodelay = true
-http_keepalive_timeout_secs = 60  # HTTP/2 PING interval in seconds (0 = disabled)
+# http2_keepalive_interval_secs = 30  # if omitted, no HTTP/2 keepalive pings are sent
+http2_keepalive_timeout_secs = 20
 
   [[upstreams.backends]]
   url    = "http://127.0.0.1:3000"

@@ -159,6 +159,8 @@ remove_request_headers = ["x-internal-token"]
         assert_eq!(config.upstreams[0].max_idle_connections_per_host, 50);
         assert!(config.upstreams[0].tcp_keepalive_enabled);
         assert_eq!(config.upstreams[0].tcp_keepalive_secs, 42);
+        assert_eq!(config.upstreams[0].http2_keepalive_interval_secs, None);
+        assert_eq!(config.upstreams[0].http2_keepalive_timeout_secs, 20);
         match &config.locations[0].handler {
             yahs::config::HandlerConfig::ReverseProxy(proxy) => {
                 assert_eq!(proxy.cache_max_age_secs, 120);
