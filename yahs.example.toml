@@ -22,8 +22,17 @@ server_name = "yahs/0.1"
 # Maximum simultaneous connections (0 = unlimited).
 max_connections = 0
 
-# HTTP idle keepalive timeout in seconds.
-http_keepalive_timeout_secs = 60
+# Enable HTTP/1.1 keepalive (persistent connections).
+http1_keepalive_enabled = true
+
+# HTTP/2 keepalive ping interval in seconds.
+# If omitted (or commented out), no HTTP/2 keepalive pings are sent.
+# http2_keepalive_interval_secs = 30
+
+# HTTP keepalive timeout in seconds.
+# For HTTP/1.1 this is the idle connection timeout.
+# For HTTP/2 this is the ping timeout (how long to wait for a ping reply).
+http2_keepalive_timeout_secs = 20
 
 # Enable TCP keepalive probes on accepted client connections.
 tcp_keepalive_enabled = true
