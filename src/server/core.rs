@@ -182,10 +182,9 @@ fn build_tls_acceptor(tls: &TlsConfig) -> Result<TlsAcceptor> {
     // Load certificate chain.
     let cert_file = std::fs::File::open(&tls.cert_path)
         .map_err(|e| anyhow::anyhow!("Failed to open cert file '{}': {}", tls.cert_path, e))?;
-    let certs: Vec<CertificateDer<'static>> =
-        rustls_pemfile::certs(&mut BufReader::new(cert_file))
-            .collect::<std::result::Result<_, _>>()
-            .map_err(|e| anyhow::anyhow!("Failed to parse certificates: {}", e))?;
+    let certs: Vec<CertificateDer<'static>> = rustls_pemfile::certs(&mut BufReader::new(cert_file))
+        .collect::<std::result::Result<_, _>>()
+        .map_err(|e| anyhow::anyhow!("Failed to parse certificates: {}", e))?;
     if certs.is_empty() {
         anyhow::bail!("No certificates found in '{}'", tls.cert_path);
     }
@@ -386,9 +385,8 @@ async fn serve_conn<I>(
     let http2_keepalive_interval = params.http2_keepalive_interval;
     let http2_keepalive_timeout = params.http2_keepalive_timeout;
 
-    let mut conn_builder = hyper_util::server::conn::auto::Builder::new(
-        hyper_util::rt::TokioExecutor::new(),
-    );
+    let mut conn_builder =
+        hyper_util::server::conn::auto::Builder::new(hyper_util::rt::TokioExecutor::new());
     conn_builder
         .http1()
         .timer(hyper_util::rt::TokioTimer::new())
@@ -472,9 +470,7 @@ pub async fn run_server(config: Config) -> Result<()> {
     let tls_task: tokio::task::JoinHandle<()> = match &config.server.tls {
         Some(tls_config) => {
             let bind_tls = config.server.bind_tls.clone().ok_or_else(|| {
-                anyhow::anyhow!(
-                    "`server.bind_tls` must be set when `[server.tls]` is configured"
-                )
+                anyhow::anyhow!("`server.bind_tls` must be set when `[server.tls]` is configured")
             })?;
             let tls_acceptor = build_tls_acceptor(tls_config)?;
             let https_listener = TcpListener::bind(&bind_tls).await.map_err(|e| {
