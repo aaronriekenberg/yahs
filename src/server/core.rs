@@ -284,21 +284,11 @@ pub async fn run_server(config: Config) -> Result<()> {
 
                     if let Err(e) = conn_builder.serve_connection(io, service).await
                     {
-                        if let Some(hyper_err) = e.downcast_ref::<hyper::Error>() {
-                            if hyper_err.is_incomplete_message() {
-                                // Client closed the connection before sending a
-                                // complete request — normal peer disconnect.
-                            } else if hyper_err.is_timeout() {
-                                // Client opened a connection but never sent a
-                                // request (e.g. browser pre-connect, idle
-                                // keep-alive expiry). Expected, not an error.
-                                debug!(
-                                    "Connection {}: header read timeout (idle client connection)",
-                                    connection_id
-                                );
-                            } else {
-                                warn!("Connection {} error: {}", connection_id, hyper_err);
-                            }
+                        let is_timeout = e
+                            .downcast_ref::<hyper::Error>()
+                            .is_some_and(|he| he.is_timeout());
+                        if is_timeout {
+                            debug!("Connection {}: header read timeout", connection_id);
                         } else {
                             warn!("Connection {} error: {}", connection_id, e);
                         }
