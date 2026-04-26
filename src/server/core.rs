@@ -177,7 +177,7 @@ fn inject_server_header(mut resp: HandlerResponse, server_name: &str) -> Handler
 /// Build a `TlsAcceptor` from the supplied `TlsConfig`.
 fn build_tls_acceptor(tls: &TlsConfig) -> Result<TlsAcceptor> {
     use tokio_rustls::rustls::ServerConfig as RustlsServerConfig;
-    use tokio_rustls::rustls::pki_types::{CertificateDer, PrivateKeyDer};
+    use tokio_rustls::rustls::pki_types::CertificateDer;
 
     // Load certificate chain.
     let cert_file = std::fs::File::open(&tls.cert_path)
@@ -195,7 +195,6 @@ fn build_tls_acceptor(tls: &TlsConfig) -> Result<TlsAcceptor> {
     let key = rustls_pemfile::private_key(&mut BufReader::new(key_file))
         .map_err(|e| anyhow::anyhow!("Failed to parse private key: {}", e))?
         .ok_or_else(|| anyhow::anyhow!("No private key found in '{}'", tls.key_path))?;
-    let key = PrivateKeyDer::from(key);
 
     // Build the rustls server config.
     let mut rustls_config = RustlsServerConfig::builder()
