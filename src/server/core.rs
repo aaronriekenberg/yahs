@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::io::BufReader;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -11,10 +10,9 @@ use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::Semaphore;
-use tokio_rustls::TlsAcceptor;
 use tracing::{debug, error, info, warn};
 
-use crate::config::{Config, HandlerConfig, LocationConfig, TlsConfig};
+use crate::config::{Config, HandlerConfig, LocationConfig};
 use crate::error::AppError;
 use crate::handler::health::HealthHandler;
 use crate::handler::proxy::ReverseProxyHandler;
@@ -172,74 +170,39 @@ fn inject_server_header(mut resp: HandlerResponse, server_name: &str) -> Handler
     resp
 }
 
-// ── TLS helpers ─────────────────────────────────────────────────────────────
+/// Run the HTTP server until a shutdown signal is received.
+pub async fn run_server(config: Config) -> Result<()> {
+    let bind_addr = config.server.bind.clone();
+    let access_log_enabled = config.logging.access_log;
+    let max_connections = config.server.max_connections;
+    let http1_keepalive_enabled = config.server.http1_keepalive_enabled;
+    let http2_keepalive_interval = config
+        .server
+        .http2_keepalive_interval_secs
+        .map(Duration::from_secs);
+    let http2_keepalive_timeout = Duration::from_secs(config.server.http2_keepalive_timeout_secs);
+    let server_tcp_keepalive_enabled = config.server.tcp_keepalive_enabled;
+    let server_tcp_keepalive = Duration::from_secs(config.server.tcp_keepalive_secs);
+    let server_tcp_nodelay = config.server.tcp_nodelay;
 
-/// Build a `TlsAcceptor` from the supplied `TlsConfig`.
-fn build_tls_acceptor(tls: &TlsConfig) -> Result<TlsAcceptor> {
-    use tokio_rustls::rustls::ServerConfig as RustlsServerConfig;
-    use tokio_rustls::rustls::pki_types::{CertificateDer, PrivateKeyDer};
-
-    // Load certificate chain.
-    let cert_file = std::fs::File::open(&tls.cert_path)
-        .map_err(|e| anyhow::anyhow!("Failed to open cert file '{}': {}", tls.cert_path, e))?;
-    let certs: Vec<CertificateDer<'static>> =
-        rustls_pemfile::certs(&mut BufReader::new(cert_file))
-            .collect::<std::result::Result<_, _>>()
-            .map_err(|e| anyhow::anyhow!("Failed to parse certificates: {}", e))?;
-    if certs.is_empty() {
-        anyhow::bail!("No certificates found in '{}'", tls.cert_path);
-    }
-
-    // Load private key (RSA or PKCS#8 or EC).
-    let key_file = std::fs::File::open(&tls.key_path)
-        .map_err(|e| anyhow::anyhow!("Failed to open key file '{}': {}", tls.key_path, e))?;
-    let key = rustls_pemfile::private_key(&mut BufReader::new(key_file))
-        .map_err(|e| anyhow::anyhow!("Failed to parse private key: {}", e))?
-        .ok_or_else(|| anyhow::anyhow!("No private key found in '{}'", tls.key_path))?;
-    let key = PrivateKeyDer::from(key);
-
-    // Build the rustls server config.
-    let mut rustls_config = RustlsServerConfig::builder()
-        .with_no_client_auth()
-        .with_single_cert(certs, key)
-        .map_err(|e| anyhow::anyhow!("TLS configuration error: {}", e))?;
-
-    // Advertise protocols via ALPN.
-    if tls.http2 {
-        rustls_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+    let error_files =
+        ErrorFileStore::from_config(config.error_files.as_ref(), &config.root).await?;
+    let state = AppState::new(config.clone(), error_files);
+    let handlers = Arc::new(build_handlers(&config)?);
+    let locations = Arc::new(config.locations.clone());
+    let connection_limiter = if max_connections > 0 {
+        Some(Arc::new(Semaphore::new(max_connections as usize)))
     } else {
-        rustls_config.alpn_protocols = vec![b"http/1.1".to_vec()];
-    }
+        None
+    };
 
-    Ok(TlsAcceptor::from(Arc::new(rustls_config)))
-}
+    let listener = TcpListener::bind(&bind_addr)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to bind to {}: {}", bind_addr, e))?;
 
-// ── Shared connection parameters ─────────────────────────────────────────────
+    info!("yahs listening on {}", bind_addr);
 
-#[derive(Clone)]
-struct ConnParams {
-    http1_keepalive_enabled: bool,
-    http2_keepalive_interval: Option<Duration>,
-    http2_keepalive_timeout: Duration,
-    tcp_keepalive_enabled: bool,
-    tcp_keepalive: Duration,
-    tcp_nodelay: bool,
-    max_connections: u32,
-    access_log_enabled: bool,
-}
-
-// ── Per-listener accept loops ────────────────────────────────────────────────
-
-/// Accept loop for plain HTTP connections.
-async fn accept_http(
-    listener: TcpListener,
-    state: AppState,
-    handlers: Arc<HashMap<String, Arc<dyn Handler>>>,
-    locations: Arc<Vec<LocationConfig>>,
-    params: ConnParams,
-    connection_limiter: Option<Arc<Semaphore>>,
-) {
-    static HTTP_COUNTER: AtomicU64 = AtomicU64::new(0);
+    static CONNECTION_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     loop {
         tokio::select! {
@@ -247,7 +210,7 @@ async fn accept_http(
                 let (stream, peer_addr) = match result {
                     Ok(v) => v,
                     Err(e) => {
-                        error!("HTTP accept error: {}", e);
+                        error!("Accept error: {}", e);
                         continue;
                     }
                 };
@@ -255,16 +218,15 @@ async fn accept_http(
                 let state = state.clone();
                 let handlers = handlers.clone();
                 let locations = locations.clone();
-                let params = params.clone();
                 let remote_addr = peer_addr.to_string();
-                let connection_id = HTTP_COUNTER.fetch_add(1, Ordering::Relaxed);
+                let connection_id = CONNECTION_COUNTER.fetch_add(1, Ordering::Relaxed);
                 let connection_permit = if let Some(limiter) = &connection_limiter {
                     match limiter.clone().try_acquire_owned() {
                         Ok(permit) => Some(permit),
                         Err(_) => {
                             error!(
                                 "Max connections reached ({}), closing incoming connection from {}",
-                                params.max_connections, remote_addr
+                                max_connections, remote_addr
                             );
                             continue;
                         }
@@ -273,12 +235,12 @@ async fn accept_http(
                     None
                 };
 
-                if params.tcp_keepalive_enabled
-                    && let Err(e) = set_tcp_keepalive(&stream, params.tcp_keepalive)
+                if server_tcp_keepalive_enabled
+                    && let Err(e) = set_tcp_keepalive(&stream, server_tcp_keepalive)
                 {
                     warn!("Failed to set TCP keepalive for {}: {}", remote_addr, e);
                 }
-                if params.tcp_nodelay
+                if server_tcp_nodelay
                     && let Err(e) = stream.set_nodelay(true)
                 {
                     warn!("Failed to set TCP_NODELAY for {}: {}", remote_addr, e);
@@ -287,232 +249,60 @@ async fn accept_http(
                 tokio::spawn(async move {
                     let _connection_permit = connection_permit;
                     let io = TokioIo::new(stream);
-                    serve_conn(io, state, handlers, locations, remote_addr, connection_id, &params).await;
-                });
-            }
-            _ = shutdown_signal() => { break; }
-        }
-    }
-}
+                    let mut conn_builder = hyper_util::server::conn::auto::Builder::new(
+                        hyper_util::rt::TokioExecutor::new(),
+                    );
+                    conn_builder
+                        .http1()
+                        .timer(hyper_util::rt::TokioTimer::new())
+                        .keep_alive(http1_keepalive_enabled);
+                    conn_builder
+                        .http2()
+                        .timer(hyper_util::rt::TokioTimer::new())
+                        .keep_alive_interval(http2_keepalive_interval)
+                        .keep_alive_timeout(http2_keepalive_timeout);
 
-/// Accept loop for HTTPS (TLS) connections.
-async fn accept_https(
-    listener: TcpListener,
-    tls_acceptor: TlsAcceptor,
-    state: AppState,
-    handlers: Arc<HashMap<String, Arc<dyn Handler>>>,
-    locations: Arc<Vec<LocationConfig>>,
-    params: ConnParams,
-    connection_limiter: Option<Arc<Semaphore>>,
-) {
-    static HTTPS_COUNTER: AtomicU64 = AtomicU64::new(0);
+                    let service = hyper::service::service_fn(move |req| {
+                        let state = state.clone();
+                        let handlers = handlers.clone();
+                        let locations = locations.clone();
+                        let remote_addr = remote_addr.clone();
+                        async move {
+                            let resp = route_request(
+                                req,
+                                state,
+                                handlers,
+                                locations,
+                                remote_addr,
+                                connection_id,
+                                access_log_enabled,
+                            )
+                            .await;
+                            Ok::<_, std::convert::Infallible>(resp)
+                        }
+                    });
 
-    loop {
-        tokio::select! {
-            result = listener.accept() => {
-                let (stream, peer_addr) = match result {
-                    Ok(v) => v,
-                    Err(e) => {
-                        error!("HTTPS accept error: {}", e);
-                        continue;
-                    }
-                };
-
-                let state = state.clone();
-                let handlers = handlers.clone();
-                let locations = locations.clone();
-                let params = params.clone();
-                let tls_acceptor = tls_acceptor.clone();
-                let remote_addr = peer_addr.to_string();
-                let connection_id = HTTPS_COUNTER.fetch_add(1, Ordering::Relaxed);
-                let connection_permit = if let Some(limiter) = &connection_limiter {
-                    match limiter.clone().try_acquire_owned() {
-                        Ok(permit) => Some(permit),
-                        Err(_) => {
-                            error!(
-                                "Max connections reached ({}), closing incoming connection from {}",
-                                params.max_connections, remote_addr
-                            );
-                            continue;
+                    if let Err(e) = conn_builder.serve_connection(io, service).await
+                    {
+                        let is_timeout = e
+                            .downcast_ref::<hyper::Error>()
+                            .is_some_and(|he| he.is_timeout());
+                        if is_timeout {
+                            debug!("Connection {}: header read timeout", connection_id);
+                        } else {
+                            warn!("Connection {} error: {}", connection_id, e);
                         }
                     }
-                } else {
-                    None
-                };
-
-                if params.tcp_keepalive_enabled
-                    && let Err(e) = set_tcp_keepalive(&stream, params.tcp_keepalive)
-                {
-                    warn!("Failed to set TCP keepalive for {}: {}", remote_addr, e);
-                }
-                if params.tcp_nodelay
-                    && let Err(e) = stream.set_nodelay(true)
-                {
-                    warn!("Failed to set TCP_NODELAY for {}: {}", remote_addr, e);
-                }
-
-                tokio::spawn(async move {
-                    let _connection_permit = connection_permit;
-                    let tls_stream = match tls_acceptor.accept(stream).await {
-                        Ok(s) => s,
-                        Err(e) => {
-                            debug!("TLS handshake failed for {}: {}", remote_addr, e);
-                            return;
-                        }
-                    };
-                    let io = TokioIo::new(tls_stream);
-                    serve_conn(io, state, handlers, locations, remote_addr, connection_id, &params).await;
                 });
             }
-            _ = shutdown_signal() => { break; }
+
+            _ = shutdown_signal() => {
+                info!("Shutdown signal received, stopping server.");
+                break;
+            }
         }
     }
-}
 
-/// Drive a single accepted connection through hyper's auto HTTP/1.1+2 builder.
-async fn serve_conn<I>(
-    io: TokioIo<I>,
-    state: AppState,
-    handlers: Arc<HashMap<String, Arc<dyn Handler>>>,
-    locations: Arc<Vec<LocationConfig>>,
-    remote_addr: String,
-    connection_id: u64,
-    params: &ConnParams,
-) where
-    I: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static,
-{
-    let access_log_enabled = params.access_log_enabled;
-    let http1_keepalive_enabled = params.http1_keepalive_enabled;
-    let http2_keepalive_interval = params.http2_keepalive_interval;
-    let http2_keepalive_timeout = params.http2_keepalive_timeout;
-
-    let mut conn_builder = hyper_util::server::conn::auto::Builder::new(
-        hyper_util::rt::TokioExecutor::new(),
-    );
-    conn_builder
-        .http1()
-        .timer(hyper_util::rt::TokioTimer::new())
-        .keep_alive(http1_keepalive_enabled);
-    conn_builder
-        .http2()
-        .timer(hyper_util::rt::TokioTimer::new())
-        .keep_alive_interval(http2_keepalive_interval)
-        .keep_alive_timeout(http2_keepalive_timeout);
-
-    let service = hyper::service::service_fn(move |req| {
-        let state = state.clone();
-        let handlers = handlers.clone();
-        let locations = locations.clone();
-        let remote_addr = remote_addr.clone();
-        async move {
-            let resp = route_request(
-                req,
-                state,
-                handlers,
-                locations,
-                remote_addr,
-                connection_id,
-                access_log_enabled,
-            )
-            .await;
-            Ok::<_, std::convert::Infallible>(resp)
-        }
-    });
-
-    if let Err(e) = conn_builder.serve_connection(io, service).await {
-        let is_timeout = e
-            .downcast_ref::<hyper::Error>()
-            .is_some_and(|he| he.is_timeout());
-        if is_timeout {
-            debug!("Connection {}: header read timeout", connection_id);
-        } else {
-            warn!("Connection {} error: {}", connection_id, e);
-        }
-    }
-}
-
-// ── Public entry point ───────────────────────────────────────────────────────
-
-/// Run the HTTP (and optionally HTTPS) server until a shutdown signal is received.
-pub async fn run_server(config: Config) -> Result<()> {
-    let params = ConnParams {
-        http1_keepalive_enabled: config.server.http1_keepalive_enabled,
-        http2_keepalive_interval: config
-            .server
-            .http2_keepalive_interval_secs
-            .map(Duration::from_secs),
-        http2_keepalive_timeout: Duration::from_secs(config.server.http2_keepalive_timeout_secs),
-        tcp_keepalive_enabled: config.server.tcp_keepalive_enabled,
-        tcp_keepalive: Duration::from_secs(config.server.tcp_keepalive_secs),
-        tcp_nodelay: config.server.tcp_nodelay,
-        max_connections: config.server.max_connections,
-        access_log_enabled: config.logging.access_log,
-    };
-
-    let error_files =
-        ErrorFileStore::from_config(config.error_files.as_ref(), &config.root).await?;
-    let state = AppState::new(config.clone(), error_files);
-    let handlers = Arc::new(build_handlers(&config)?);
-    let locations = Arc::new(config.locations.clone());
-
-    let connection_limiter: Option<Arc<Semaphore>> = if params.max_connections > 0 {
-        Some(Arc::new(Semaphore::new(params.max_connections as usize)))
-    } else {
-        None
-    };
-
-    // Bind the plain-HTTP listener.
-    let http_addr = config.server.bind.clone();
-    let http_listener = TcpListener::bind(&http_addr)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to bind HTTP listener on {}: {}", http_addr, e))?;
-    info!("yahs listening on {} (HTTP)", http_addr);
-
-    // Optionally bind the HTTPS listener.
-    let tls_task: tokio::task::JoinHandle<()> = match &config.server.tls {
-        Some(tls_config) => {
-            let bind_tls = config.server.bind_tls.clone().ok_or_else(|| {
-                anyhow::anyhow!(
-                    "`server.bind_tls` must be set when `[server.tls]` is configured"
-                )
-            })?;
-            let tls_acceptor = build_tls_acceptor(tls_config)?;
-            let https_listener = TcpListener::bind(&bind_tls).await.map_err(|e| {
-                anyhow::anyhow!("Failed to bind HTTPS listener on {}: {}", bind_tls, e)
-            })?;
-            info!("yahs listening on {} (HTTPS)", bind_tls);
-
-            let state = state.clone();
-            let handlers = handlers.clone();
-            let locations = locations.clone();
-            let params = params.clone();
-            let limiter = connection_limiter.clone();
-            tokio::spawn(accept_https(
-                https_listener,
-                tls_acceptor,
-                state,
-                handlers,
-                locations,
-                params,
-                limiter,
-            ))
-        }
-        None => tokio::spawn(std::future::ready(())),
-    };
-
-    let http_task = tokio::spawn(accept_http(
-        http_listener,
-        state,
-        handlers,
-        locations,
-        params,
-        connection_limiter,
-    ));
-
-    // Wait for both tasks; either will stop on the shutdown signal.
-    let _ = tokio::join!(http_task, tls_task);
-
-    info!("Shutdown signal received, stopping server.");
     Ok(())
 }
 

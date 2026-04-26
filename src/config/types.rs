@@ -56,13 +56,8 @@ pub struct ErrorFilesConfig {
 /// Core server socket and limits configuration.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ServerConfig {
-    /// Bind address for plain HTTP connections, e.g. "0.0.0.0:80".
+    /// Bind address, e.g. "0.0.0.0:8080"
     pub bind: String,
-
-    /// Bind address for HTTPS (TLS) connections, e.g. "0.0.0.0:443".
-    /// Required when `[server.tls]` is configured; ignored otherwise.
-    #[serde(default)]
-    pub bind_tls: Option<String>,
 
     /// Optional server name emitted in the `Server` response header.
     #[serde(default = "default_server_name")]
@@ -118,20 +113,11 @@ fn default_tcp_keepalive_secs() -> u64 {
     15
 }
 
-/// TLS configuration (optional).  When present the server opens a second
-/// listener on `server.bind_tls` that accepts HTTPS connections.
+/// TLS configuration.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TlsConfig {
-    /// Path to the PEM-encoded certificate (chain) file.
     pub cert_path: String,
-
-    /// Path to the PEM-encoded private key file.
     pub key_path: String,
-
-    /// Advertise and accept HTTP/2 (h2) over TLS in addition to HTTP/1.1.
-    /// Defaults to `true`.
-    #[serde(default = "default_true")]
-    pub http2: bool,
 }
 
 /// A single URL-prefix location block.
