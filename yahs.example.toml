@@ -14,8 +14,12 @@
 # ── Global server settings ─────────────────────────────────────────────────
 
 [server]
-# Address and port to listen on.  REQUIRED.
+# Address and port to listen on for plain HTTP connections.  REQUIRED.
 bind = "0.0.0.0:8080"
+
+# Address and port to listen on for HTTPS (TLS) connections.
+# Required when [server.tls] is configured.
+# bind_tls = "0.0.0.0:443"
 
 # Value emitted in the `Server` response header.
 # server_name = "yahs"
@@ -43,8 +47,12 @@ bind = "0.0.0.0:8080"
 # tcp_nodelay = true
 
 # [server.tls]
+# Path to the PEM-encoded certificate (chain) file.
 # cert_path = "/etc/ssl/certs/server.crt"
+# Path to the PEM-encoded private key file.
 # key_path  = "/etc/ssl/private/server.key"
+# Advertise and accept HTTP/2 (h2) over TLS in addition to HTTP/1.1.
+# http2 = true
 
 # ── Logging ────────────────────────────────────────────────────────────────
 
