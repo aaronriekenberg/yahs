@@ -90,10 +90,9 @@ impl Handler for ReverseProxyHandler {
         let mut builder = Request::builder().method(parts.method).uri(target_uri);
 
         // Copy headers, removing hop-by-hop and applying removes/overrides.
-        // Skip the host header here; it is forwarded explicitly below.
         for (name, value) in &parts.headers {
             let name_lower = name.as_str().to_lowercase();
-            if HOP_BY_HOP.contains(&name_lower.as_str()) || name_lower == hyper::header::HOST.as_str() {
+            if HOP_BY_HOP.contains(&name_lower.as_str()) {
                 continue;
             }
             if self
@@ -105,12 +104,6 @@ impl Handler for ReverseProxyHandler {
                 continue;
             }
             builder = builder.header(name, value);
-        }
-
-        // Forward the Host header from the incoming request so that the upstream
-        // receives the original hostname rather than the backend address.
-        if let Some(host) = parts.headers.get(hyper::header::HOST) {
-            builder = builder.header(hyper::header::HOST, host);
         }
 
         // Inject X-Forwarded-For using the actual client IP from the request extension.
@@ -210,7 +203,8 @@ impl UpstreamRuntime {
         client_builder
             .pool_max_idle_per_host(config.max_idle_connections_per_host)
             .pool_idle_timeout(Duration::from_secs(config.max_idle_connection_timeout_secs))
-            .timer(hyper_util::rt::TokioTimer::new());
+            .timer(hyper_util::rt::TokioTimer::new())
+            .set_host(false);
         if config.http2_prior_knowledge {
             client_builder.http2_only(true);
         }
