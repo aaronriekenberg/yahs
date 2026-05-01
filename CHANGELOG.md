@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.2...yahs-v2.7.3) (2026-05-01)
+
+
+### Bug Fixes
+
+* merge build/upload into release-please.yml to fix release workflow ([cffe243](https://github.com/aaronriekenberg/yahs/commit/cffe24331f0b7571e7141f4067869e77529c38fe))
+* merge build/upload into release-please.yml to resolve missing release assets ([8378b52](https://github.com/aaronriekenberg/yahs/commit/8378b52b4aee8f095fbf30ad772c02593308a194))
+
 ## [2.7.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.1...yahs-v2.7.2) (2026-05-01)
 
 
