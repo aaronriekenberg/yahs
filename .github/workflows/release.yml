@@ -73,4 +73,3 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: artifacts/**/*
-          generate_release_notes: true
