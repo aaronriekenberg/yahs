@@ -1,6 +1,6 @@
 [package]
 name = "yahs"
-version = "2.5.1"
+version = "2.6.0"
 edition = "2024"
 
 [[bin]]
