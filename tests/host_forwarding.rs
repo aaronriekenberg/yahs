@@ -254,8 +254,17 @@ async fn assert_host_forwarded(http2_client: bool, http2_upstream: bool) {
     let (backend_addr, _backend) = start_echo_backend(http2_upstream).await;
     let (proxy_addr, _proxy) = start_proxy(backend_addr, http2_upstream).await;
 
-    // Give the servers a moment to be ready.
-    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    // Wait until the proxy is accepting connections (poll for up to 1 second).
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+    loop {
+        if tokio::net::TcpStream::connect(proxy_addr).await.is_ok() {
+            break;
+        }
+        if std::time::Instant::now() >= deadline {
+            panic!("proxy at {} did not become ready within 1s", proxy_addr);
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+    }
 
     let received_host = if http2_client {
         http2_request(proxy_addr, original_host).await

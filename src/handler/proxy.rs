@@ -101,17 +101,19 @@ impl Handler for ReverseProxyHandler {
         );
 
         // Build the forwarded URI path.
-        let forwarded_path = if self.config.strip_prefix {
-            let stripped = req
-                .uri()
-                .path()
-                .strip_prefix(&self.location_prefix)
-                .unwrap_or(req.uri().path());
-            if stripped.is_empty() { "/" } else { stripped }
-        } else {
-            req.uri().path()
-        }
-        .to_owned();
+        let forwarded_path = {
+            let path = if self.config.strip_prefix {
+                let stripped = req
+                    .uri()
+                    .path()
+                    .strip_prefix(&self.location_prefix)
+                    .unwrap_or(req.uri().path());
+                if stripped.is_empty() { "/" } else { stripped }
+            } else {
+                req.uri().path()
+            };
+            path.to_owned()
+        };
 
         let query = req
             .uri()
@@ -262,7 +264,9 @@ impl UpstreamRuntime {
                 std::iter::repeat_n(b.url.trim_end_matches('/').to_owned(), b.weight as usize)
             })
             .map(|url| {
-                let backend_uri: Uri = url.parse().expect("invalid backend URL");
+                let backend_uri: Uri = url
+                    .parse()
+                    .unwrap_or_else(|e| panic!("invalid backend URL '{}': {}", url, e));
                 let scheme = backend_uri.scheme_str().unwrap_or("http").to_owned();
                 let authority = backend_uri
                     .authority()
