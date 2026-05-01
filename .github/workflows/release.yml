@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "yahs-v*.*.*"
+  release:
+    types: [published]
 
 env:
   CARGO_TERM_COLOR: always
