@@ -142,10 +142,12 @@ impl Handler for ReverseProxyHandler {
             })
             .unwrap_or_else(|| backend.authority.clone());
 
-        let target_uri: Uri =
-            format!("{}://{}{}{}", backend.scheme, original_host, forwarded_path, query)
-                .parse()
-                .map_err(|e: hyper::http::uri::InvalidUri| AppError::upstream(e.to_string()))?;
+        let target_uri: Uri = format!(
+            "{}://{}{}{}",
+            backend.scheme, original_host, forwarded_path, query
+        )
+        .parse()
+        .map_err(|e: hyper::http::uri::InvalidUri| AppError::upstream(e.to_string()))?;
 
         let mut builder = Request::builder().method(parts.method).uri(target_uri);
 
@@ -196,11 +198,10 @@ impl Handler for ReverseProxyHandler {
 
         let request_timeout = Duration::from_millis(self.upstream.request_timeout_ms);
 
-        let response =
-            tokio::time::timeout(request_timeout, backend.client.request(forward_req))
-                .await
-                .map_err(|_| AppError::upstream("Request to upstream timed out"))?
-                .map_err(|e| AppError::upstream(e.to_string()))?;
+        let response = tokio::time::timeout(request_timeout, backend.client.request(forward_req))
+            .await
+            .map_err(|_| AppError::upstream("Request to upstream timed out"))?
+            .map_err(|e| AppError::upstream(e.to_string()))?;
 
         // Convert the upstream response.
         let (resp_parts, resp_body) = response.into_parts();
@@ -292,9 +293,7 @@ impl UpstreamRuntime {
                 let mut client_builder = Client::builder(TokioExecutor::new());
                 client_builder
                     .pool_max_idle_per_host(config.max_idle_connections_per_host)
-                    .pool_idle_timeout(Duration::from_secs(
-                        config.max_idle_connection_timeout_secs,
-                    ))
+                    .pool_idle_timeout(Duration::from_secs(config.max_idle_connection_timeout_secs))
                     .timer(hyper_util::rt::TokioTimer::new());
                 if config.http2_prior_knowledge {
                     client_builder.http2_only(true);

@@ -25,11 +25,9 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
-use yahs::config::{
-    BackendConfig, ReverseProxyConfig, ServerConfig, UpstreamConfig,
-};
-use yahs::handler::{Handler, error_response};
+use yahs::config::{BackendConfig, ReverseProxyConfig, ServerConfig, UpstreamConfig};
 use yahs::handler::proxy::ReverseProxyHandler;
+use yahs::handler::{Handler, error_response};
 use yahs::server::error_files::ErrorFileStore;
 use yahs::server::state::AppState;
 
@@ -122,7 +120,10 @@ fn make_app_state() -> AppState {
 /// prior-knowledge when `http2_upstream` is true.
 ///
 /// Returns `(proxy_addr, task_handle)`.
-async fn start_proxy(backend_addr: SocketAddr, http2_upstream: bool) -> (SocketAddr, JoinHandle<()>) {
+async fn start_proxy(
+    backend_addr: SocketAddr,
+    http2_upstream: bool,
+) -> (SocketAddr, JoinHandle<()>) {
     let upstream_config = UpstreamConfig {
         name: "test".to_string(),
         strategy: Default::default(),
@@ -223,8 +224,9 @@ async fn http2_request(proxy_addr: SocketAddr, host: &str) -> String {
     let stream = tokio::net::TcpStream::connect(proxy_addr).await.unwrap();
     let io = TokioIo::new(stream);
 
-    let (mut sender, conn) =
-        hyper::client::conn::http2::handshake(TokioExecutor::new(), io).await.unwrap();
+    let (mut sender, conn) = hyper::client::conn::http2::handshake(TokioExecutor::new(), io)
+        .await
+        .unwrap();
     tokio::spawn(conn);
 
     // Build a fully-qualified URI so that hyper sets :authority from it.
