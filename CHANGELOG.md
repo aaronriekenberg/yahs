@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.3...yahs-v2.8.0) (2026-05-01)
+
+
+### Features
+
+* In the reverse proxy, make sure there is only one client created for each upstream backend ([3f752ec](https://github.com/aaronriekenberg/yahs/commit/3f752ec1760e2697bb6c60fca7fbdb56862a892d))
+
 ## [2.7.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.2...yahs-v2.7.3) (2026-05-01)
 
 
