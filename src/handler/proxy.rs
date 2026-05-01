@@ -91,12 +91,7 @@ impl Handler for ReverseProxyHandler {
         req: Request<Incoming>,
         _state: &AppState,
     ) -> Result<HandlerResponse, AppError> {
-        let client_ip_ext = req
-            .extensions()
-            .get::<String>()
-            .map(|s| s.split(':').next().unwrap_or(s).to_owned())
-            .unwrap_or_else(|| "unknown".to_owned());
-        let backend = self.upstream.next_backend(&client_ip_ext);
+        let backend = self.upstream.next_backend();
         debug!(
             "Proxying {} {} → {}://{}",
             req.method(),
@@ -180,7 +175,12 @@ impl Handler for ReverseProxyHandler {
         }
 
         // Inject X-Forwarded-For using the actual client IP from the request extension.
-        builder = builder.header("x-forwarded-for", &client_ip_ext);
+        let client_ip = parts
+            .extensions
+            .get::<String>()
+            .map(|s| s.split(':').next().unwrap_or(s).to_owned())
+            .unwrap_or_else(|| "unknown".to_owned());
+        builder = builder.header("x-forwarded-for", client_ip);
 
         // Extra headers from config.
         for (k, v) in &self.config.extra_request_headers {
@@ -250,12 +250,7 @@ struct BackendRuntime {
 }
 
 struct UpstreamRuntime {
-    /// One entry per distinct backend; clients are never duplicated.
     backends: Vec<BackendRuntime>,
-    /// Weighted index table: each backend index appears `weight` times so that
-    /// round-robin / hash selection naturally honours configured weights without
-    /// creating additional HTTP clients.
-    weighted_index: Vec<usize>,
     strategy: LoadBalancingStrategy,
     counter: AtomicUsize,
     request_timeout_ms: u64,
@@ -263,12 +258,13 @@ struct UpstreamRuntime {
 
 impl UpstreamRuntime {
     fn new(config: &UpstreamConfig) -> Self {
-        // Build exactly one BackendRuntime per configured backend.
         let backends: Vec<BackendRuntime> = config
             .backends
             .iter()
-            .map(|b: &BackendConfig| {
-                let url = b.url.trim_end_matches('/').to_owned();
+            .flat_map(|b: &BackendConfig| {
+                std::iter::repeat_n(b.url.trim_end_matches('/').to_owned(), b.weight as usize)
+            })
+            .map(|url| {
                 let backend_uri: Uri = url
                     .parse()
                     .unwrap_or_else(|e| panic!("invalid backend URL '{}': {}", url, e));
@@ -319,35 +315,31 @@ impl UpstreamRuntime {
             })
             .collect();
 
-        // Build the weighted index table: backend index i appears weight[i] times.
-        let weighted_index: Vec<usize> = config
-            .backends
-            .iter()
-            .enumerate()
-            .flat_map(|(i, b)| std::iter::repeat_n(i, b.weight as usize))
-            .collect();
-
         Self {
             backends,
-            weighted_index,
             strategy: config.strategy,
             counter: AtomicUsize::new(0),
             request_timeout_ms: config.request_timeout_ms,
         }
     }
 
-    fn next_backend(&self, client_ip: &str) -> &BackendRuntime {
+    fn next_backend(&self) -> &BackendRuntime {
         use LoadBalancingStrategy::*;
-        let slot = match self.strategy {
-            RoundRobin => self.counter.fetch_add(1, Ordering::Relaxed) % self.weighted_index.len(),
-            Random => next_counter() % self.weighted_index.len(),
-            IpHash => {
-                // FNV-1a hash of the client IP for stable backend affinity.
-                let hash = ip_fnv1a(client_ip);
-                hash % self.weighted_index.len()
+        match self.strategy {
+            RoundRobin => {
+                let idx = self.counter.fetch_add(1, Ordering::Relaxed) % self.backends.len();
+                &self.backends[idx]
             }
-        };
-        &self.backends[self.weighted_index[slot]]
+            Random => {
+                let idx = (next_counter()) % self.backends.len();
+                &self.backends[idx]
+            }
+            IpHash => {
+                // Fallback to round-robin when no IP is available at this layer.
+                let idx = self.counter.fetch_add(1, Ordering::Relaxed) % self.backends.len();
+                &self.backends[idx]
+            }
+        }
     }
 }
 
@@ -355,13 +347,4 @@ impl UpstreamRuntime {
 fn next_counter() -> usize {
     static COUNTER: AtomicUsize = AtomicUsize::new(1);
     COUNTER.fetch_add(1, Ordering::Relaxed)
-}
-
-/// FNV-1a hash of a string, returned as a `usize` for index arithmetic.
-fn ip_fnv1a(s: &str) -> usize {
-    const FNV_OFFSET: usize = 14695981039346656037_u64 as usize;
-    const FNV_PRIME: usize = 1099511628211;
-    s.bytes().fold(FNV_OFFSET, |acc, b| {
-        (acc ^ b as usize).wrapping_mul(FNV_PRIME)
-    })
 }
