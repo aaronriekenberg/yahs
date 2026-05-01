@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.1...yahs-v2.7.2) (2026-05-01)
+
+
+### Bug Fixes
+
+* trigger release workflow on `release: published` instead of `push: tags` ([9104715](https://github.com/aaronriekenberg/yahs/commit/9104715685b0f9dc2f223028998a53acbc5ddf64))
+* trigger release workflow on release published event instead of tag push ([c6627dd](https://github.com/aaronriekenberg/yahs/commit/c6627ddb4ba3e412903ca7ed0d6bed1fdb9c319e))
+
 ## [2.7.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.0...yahs-v2.7.1) (2026-05-01)
 
 
