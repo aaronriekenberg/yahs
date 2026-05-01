@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::task::{Context, Poll};
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -29,6 +30,36 @@ static HOP_BY_HOP: &[&str] = &[
     "transfer-encoding",
     "upgrade",
 ];
+
+/// A connector that establishes TCP connections to a fixed backend address
+/// regardless of the URI authority in the outgoing request.
+///
+/// This enables the HTTP client to send the original incoming `Host` /
+/// HTTP-2 `:authority` in the request URI (so hyper derives the correct
+/// `Host`/`:authority` header) while still physically connecting to the
+/// configured upstream backend address.
+#[derive(Clone)]
+struct BackendOverrideConnector {
+    /// URI whose authority is used for the actual TCP connection.
+    backend_uri: Uri,
+    inner: HttpConnector,
+}
+
+impl tower::Service<Uri> for BackendOverrideConnector {
+    type Response = <HttpConnector as tower::Service<Uri>>::Response;
+    type Error = <HttpConnector as tower::Service<Uri>>::Error;
+    type Future = <HttpConnector as tower::Service<Uri>>::Future;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, _uri: Uri) -> Self::Future {
+        // Always route the TCP connection to the configured backend,
+        // irrespective of whatever authority the request URI carries.
+        self.inner.call(self.backend_uri.clone())
+    }
+}
 
 /// Reverse proxy handler.
 pub struct ReverseProxyHandler {
@@ -60,10 +91,16 @@ impl Handler for ReverseProxyHandler {
         req: Request<Incoming>,
         _state: &AppState,
     ) -> Result<HandlerResponse, AppError> {
-        let backend_url = self.upstream.next_backend();
-        debug!("Proxying {} {} → {}", req.method(), req.uri(), backend_url);
+        let backend = self.upstream.next_backend();
+        debug!(
+            "Proxying {} {} → {}://{}",
+            req.method(),
+            req.uri(),
+            backend.scheme,
+            backend.authority
+        );
 
-        // Build the forwarded URI.
+        // Build the forwarded URI path.
         let forwarded_path = if self.config.strip_prefix {
             let stripped = req
                 .uri()
@@ -73,26 +110,53 @@ impl Handler for ReverseProxyHandler {
             if stripped.is_empty() { "/" } else { stripped }
         } else {
             req.uri().path()
-        };
+        }
+        .to_owned();
 
         let query = req
             .uri()
             .query()
             .map(|q| format!("?{}", q))
             .unwrap_or_default();
-        let target_uri: Uri = format!("{}{}{}", backend_url, forwarded_path, query)
-            .parse()
-            .map_err(|e: hyper::http::uri::InvalidUri| AppError::upstream(e.to_string()))?;
 
         // Build forwarded request.
         let (parts, body) = req.into_parts();
 
+        // Use the incoming Host header (or :authority for HTTP/2) as the URI
+        // authority so that hyper derives the correct Host (HTTP/1.1) or
+        // :authority (HTTP/2) header for the upstream request.
+        // Fall back to the backend's own address when the incoming request
+        // carries no host information.
+        let original_host = parts
+            .uri
+            .authority()
+            .map(|a| a.as_str().to_owned())
+            .or_else(|| {
+                parts
+                    .headers
+                    .get(hyper::header::HOST)
+                    .and_then(|v| v.to_str().ok())
+                    .map(String::from)
+            })
+            .unwrap_or_else(|| backend.authority.clone());
+
+        let target_uri: Uri =
+            format!("{}://{}{}{}", backend.scheme, original_host, forwarded_path, query)
+                .parse()
+                .map_err(|e: hyper::http::uri::InvalidUri| AppError::upstream(e.to_string()))?;
+
         let mut builder = Request::builder().method(parts.method).uri(target_uri);
 
         // Copy headers, removing hop-by-hop and applying removes/overrides.
+        // Skip `host` explicitly: hyper derives the Host header (HTTP/1.1) or
+        // :authority pseudo-header (HTTP/2) from the request URI set above,
+        // which already carries the original incoming host value.
         for (name, value) in &parts.headers {
             let name_lower = name.as_str().to_lowercase();
             if HOP_BY_HOP.contains(&name_lower.as_str()) {
+                continue;
+            }
+            if name_lower == "host" {
                 continue;
             }
             if self
@@ -131,7 +195,7 @@ impl Handler for ReverseProxyHandler {
         let request_timeout = Duration::from_millis(self.upstream.request_timeout_ms);
 
         let response =
-            tokio::time::timeout(request_timeout, self.upstream.client.request(forward_req))
+            tokio::time::timeout(request_timeout, backend.client.request(forward_req))
                 .await
                 .map_err(|_| AppError::upstream("Request to upstream timed out"))?
                 .map_err(|e| AppError::upstream(e.to_string()))?;
@@ -170,77 +234,107 @@ impl Handler for ReverseProxyHandler {
 
 // ── upstream load balancing ───────────────────────────────────────────────
 
+/// A single backend with its own HTTP client that always physically connects
+/// to this backend's address via `BackendOverrideConnector`.
+struct BackendRuntime {
+    /// URI scheme of the backend (e.g. "http").
+    scheme: String,
+    /// URI authority of the backend (e.g. "127.0.0.1:3000"), used as fallback
+    /// when the incoming request carries no host information.
+    authority: String,
+    /// HTTP client bound to this backend.
+    client: Client<BackendOverrideConnector, BoxBody>,
+}
+
 struct UpstreamRuntime {
-    backends: Vec<String>,
+    backends: Vec<BackendRuntime>,
     strategy: LoadBalancingStrategy,
     counter: AtomicUsize,
-    client: Client<HttpConnector, BoxBody>,
     request_timeout_ms: u64,
 }
 
 impl UpstreamRuntime {
     fn new(config: &UpstreamConfig) -> Self {
-        let backends: Vec<String> = config
+        let backends: Vec<BackendRuntime> = config
             .backends
             .iter()
             .flat_map(|b: &BackendConfig| {
                 std::iter::repeat_n(b.url.trim_end_matches('/').to_owned(), b.weight as usize)
             })
+            .map(|url| {
+                let backend_uri: Uri = url.parse().expect("invalid backend URL");
+                let scheme = backend_uri.scheme_str().unwrap_or("http").to_owned();
+                let authority = backend_uri
+                    .authority()
+                    .map(|a| a.as_str().to_owned())
+                    .unwrap_or_default();
+
+                let mut connector = HttpConnector::new();
+                connector.set_nodelay(config.tcp_nodelay);
+                if config.tcp_keepalive_enabled {
+                    let ka = Duration::from_secs(config.tcp_keepalive_secs);
+                    connector.set_keepalive(Some(ka));
+                    connector.set_keepalive_interval(Some(ka));
+                    connector.set_keepalive_retries(Some(9));
+                } else {
+                    connector.set_keepalive(None);
+                }
+
+                let override_connector = BackendOverrideConnector {
+                    backend_uri,
+                    inner: connector,
+                };
+
+                let mut client_builder = Client::builder(TokioExecutor::new());
+                client_builder
+                    .pool_max_idle_per_host(config.max_idle_connections_per_host)
+                    .pool_idle_timeout(Duration::from_secs(
+                        config.max_idle_connection_timeout_secs,
+                    ))
+                    .timer(hyper_util::rt::TokioTimer::new());
+                if config.http2_prior_knowledge {
+                    client_builder.http2_only(true);
+                }
+                if let Some(interval_secs) = config.http2_keepalive_interval_secs {
+                    let interval = Duration::from_secs(interval_secs);
+                    let timeout = Duration::from_secs(config.http2_keepalive_timeout_secs);
+                    client_builder.http2_keep_alive_interval(Some(interval));
+                    client_builder.http2_keep_alive_timeout(timeout);
+                    client_builder.http2_keep_alive_while_idle(true);
+                }
+                let client = client_builder.build(override_connector);
+
+                BackendRuntime {
+                    scheme,
+                    authority,
+                    client,
+                }
+            })
             .collect();
-
-        let mut connector = HttpConnector::new();
-        connector.set_nodelay(config.tcp_nodelay);
-        if config.tcp_keepalive_enabled {
-            let ka = Duration::from_secs(config.tcp_keepalive_secs);
-            connector.set_keepalive(Some(ka));
-            connector.set_keepalive_interval(Some(ka));
-            connector.set_keepalive_retries(Some(9));
-        } else {
-            connector.set_keepalive(None);
-        }
-
-        let mut client_builder = Client::builder(TokioExecutor::new());
-        client_builder
-            .pool_max_idle_per_host(config.max_idle_connections_per_host)
-            .pool_idle_timeout(Duration::from_secs(config.max_idle_connection_timeout_secs))
-            .timer(hyper_util::rt::TokioTimer::new())
-            .set_host(false);
-        if config.http2_prior_knowledge {
-            client_builder.http2_only(true);
-        }
-        if let Some(interval_secs) = config.http2_keepalive_interval_secs {
-            let interval = Duration::from_secs(interval_secs);
-            let timeout = Duration::from_secs(config.http2_keepalive_timeout_secs);
-            client_builder.http2_keep_alive_interval(Some(interval));
-            client_builder.http2_keep_alive_timeout(timeout);
-            client_builder.http2_keep_alive_while_idle(true);
-        }
-        let client = client_builder.build(connector);
 
         Self {
             backends,
             strategy: config.strategy,
             counter: AtomicUsize::new(0),
-            client,
             request_timeout_ms: config.request_timeout_ms,
         }
     }
 
-    fn next_backend(&self) -> String {
+    fn next_backend(&self) -> &BackendRuntime {
         use LoadBalancingStrategy::*;
         match self.strategy {
             RoundRobin => {
                 let idx = self.counter.fetch_add(1, Ordering::Relaxed) % self.backends.len();
-                self.backends[idx].clone()
+                &self.backends[idx]
             }
             Random => {
                 let idx = (next_counter()) % self.backends.len();
-                self.backends[idx].clone()
+                &self.backends[idx]
             }
             IpHash => {
                 // Fallback to round-robin when no IP is available at this layer.
                 let idx = self.counter.fetch_add(1, Ordering::Relaxed) % self.backends.len();
-                self.backends[idx].clone()
+                &self.backends[idx]
             }
         }
     }
