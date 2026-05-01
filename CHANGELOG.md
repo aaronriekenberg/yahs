@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.0...yahs-v2.7.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* match release workflow tag pattern to release-please tag format ([6e6d9ea](https://github.com/aaronriekenberg/yahs/commit/6e6d9ead7b79543ef2b2d2d70a7f709177c20c4f))
+* update release.yml tag pattern to match release-please tags (yahs-v*.*.*) ([db97048](https://github.com/aaronriekenberg/yahs/commit/db970485dc00aa736fa81994ae3477eb6c02bcc2))
+
 ## [2.7.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.6.0...yahs-v2.7.0) (2026-05-01)
 
 
