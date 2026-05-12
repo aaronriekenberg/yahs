@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.8.0...yahs-v2.8.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* configure dependabot commit messages for release-please compatibility ([88d87fb](https://github.com/aaronriekenberg/yahs/commit/88d87fbeaaf099d6b7ed33db8757a005ade5c657))
+
 ## [2.8.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.7.3...yahs-v2.8.0) (2026-05-01)
 
 
