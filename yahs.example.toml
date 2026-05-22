@@ -124,7 +124,7 @@ path = "/api"
   type              = "reverse_proxy"
   # Upstream cluster name.  REQUIRED.
   upstream          = "api_backend"
-  # strip_prefix = true
+  # strip_prefix = false
   # cache_max_age_secs = 0
   # remove_request_headers = []
 
@@ -138,7 +138,7 @@ path = "/"
   [locations.handler]
   type = "static_files"
   # index            = ["index.html"]
-  # strip_prefix     = true
+  # strip_prefix     = false
   # cache_max_age_secs = 3600
   # precompressed    = true
   # encodings        = ["zstd", "brotli", "gzip"]
