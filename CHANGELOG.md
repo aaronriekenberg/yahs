@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.9.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.8.1...yahs-v2.9.0) (2026-05-22)
+
+
+### Features
+
+* Reapply "Default strip_prefix to false for static_files and reverse_proxy ([#57](https://github.com/aaronriekenberg/yahs/issues/57))" ([c14e906](https://github.com/aaronriekenberg/yahs/commit/c14e906c5aa2c0fc7459ab60bff5a81fe008b552))
+
+
+### Bug Fixes
+
+* bump aws-lc-rs from 1.16.3 to 1.17.0 ([9d24f01](https://github.com/aaronriekenberg/yahs/commit/9d24f01013cdbc2eb464770238547e3331904f05))
+* bump aws-lc-rs from 1.16.3 to 1.17.0 ([c11e844](https://github.com/aaronriekenberg/yahs/commit/c11e844fe20da13cbbc8ed11a26e9c8217da9619))
+* bump serde_json from 1.0.149 to 1.0.150 ([#56](https://github.com/aaronriekenberg/yahs/issues/56)) ([e7cf164](https://github.com/aaronriekenberg/yahs/commit/e7cf164a1b38a0a2b11eef7f569181e397f6653a))
+* bump tower-http from 0.6.10 to 0.6.11 ([#55](https://github.com/aaronriekenberg/yahs/issues/55)) ([5a52b77](https://github.com/aaronriekenberg/yahs/commit/5a52b77c429002b2b5ffb65d58c9c9ee771600da))
+* bump winnow from 1.0.2 to 1.0.3 ([c1bdc5f](https://github.com/aaronriekenberg/yahs/commit/c1bdc5f18aafe2c291433bad80cae47dd0b21971))
+* bump winnow from 1.0.2 to 1.0.3 ([bf9782f](https://github.com/aaronriekenberg/yahs/commit/bf9782f65ec402e239688c8f898d1857a24e4b33))
+* change dependabot commit prefix from chore to fix for release-please compatibility ([2788ff7](https://github.com/aaronriekenberg/yahs/commit/2788ff77be1ccd0e80302c8f7e655b2cef786521))
+* use `fix:` prefix for dependabot commits so release-please creates release PRs ([783b6dc](https://github.com/aaronriekenberg/yahs/commit/783b6dc44dfe98aaa30fa7a687045f8894fcde52))
+
 ## [2.8.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.8.0...yahs-v2.8.1) (2026-05-12)
 
 
