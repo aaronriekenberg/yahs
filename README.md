@@ -129,7 +129,7 @@ top-level [`root`](#root) configuration key.
 | Key | Default | Description |
 |---|---|---|
 | `index` | `["index.html"]` | Index file names tried for directory requests |
-| `strip_prefix` | `false` | Remove location prefix before path lookup |
+| `strip_prefix` | `true` | Remove location prefix before path lookup |
 | `cache_max_age_secs` | `3600` | `Cache-Control: max-age` fallback value |
 | `cache_rules` | `[]` | Ordered per-path cache rules (see below) |
 | `blocked_paths` | `[]` | Glob patterns for paths that return 404 (see below) |
@@ -180,7 +180,7 @@ Forwards requests to an upstream cluster.
 | Key | Default | Description |
 |---|---|---|
 | `upstream` | *(required)* | Name of the upstream cluster |
-| `strip_prefix` | `false` | Remove location prefix before forwarding |
+| `strip_prefix` | `true` | Remove location prefix before forwarding |
 | `cache_max_age_secs` | `0` | Sets proxied response `Cache-Control` (`no-store` when `0`, else `public, max-age=N`) |
 | `extra_request_headers` | `{}` | Headers injected into the forwarded request |
 | `remove_request_headers` | `[]` | Request headers stripped before forwarding |

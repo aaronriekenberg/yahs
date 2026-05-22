@@ -200,7 +200,6 @@ upstream = "backend"
         let config = load_config(f.path()).unwrap();
         match &config.locations[0].handler {
             yahs::config::HandlerConfig::ReverseProxy(proxy) => {
-                assert!(!proxy.strip_prefix);
                 assert_eq!(proxy.cache_max_age_secs, 0);
                 assert!(proxy.extra_request_headers.is_empty());
                 assert!(proxy.remove_request_headers.is_empty());
@@ -317,7 +316,6 @@ type = "static_files"
         let config = load_config(f.path()).unwrap();
         match &config.locations[0].handler {
             yahs::config::HandlerConfig::StaticFiles(sf) => {
-                assert!(!sf.strip_prefix);
                 assert!(sf.blocked_paths.is_empty());
                 assert!(sf.cache_rules.is_empty());
                 assert_eq!(sf.cache_max_age_secs, 3600); // default

@@ -169,7 +169,7 @@ pub struct StaticFilesConfig {
     pub index: Vec<String>,
 
     /// Strip the location prefix before joining with root.
-    #[serde(default)]
+    #[serde(default = "default_true")]
     pub strip_prefix: bool,
 
     /// Cache-Control max-age in seconds for served files (0 = no caching).
@@ -263,7 +263,7 @@ pub struct ReverseProxyConfig {
     pub upstream: String,
 
     /// Strip the location prefix when forwarding the request.
-    #[serde(default)]
+    #[serde(default = "default_true")]
     pub strip_prefix: bool,
 
     /// Cache-Control max-age in seconds for proxied responses (0 = `no-store`).
