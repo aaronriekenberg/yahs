@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.9.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.9.0...yahs-v2.9.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* bump autocfg from 1.5.0 to 1.5.1 ([#59](https://github.com/aaronriekenberg/yahs/issues/59)) ([4f4d46a](https://github.com/aaronriekenberg/yahs/commit/4f4d46a15376f4bb594dea067d5b47df788acd31))
+* bump brotli from 8.0.2 to 8.0.3 ([#66](https://github.com/aaronriekenberg/yahs/issues/66)) ([87ba8f5](https://github.com/aaronriekenberg/yahs/commit/87ba8f54ba6d34215e3be73f8752e0cd54254133))
+* bump brotli-decompressor from 5.0.0 to 5.0.1 ([#67](https://github.com/aaronriekenberg/yahs/issues/67)) ([07e8052](https://github.com/aaronriekenberg/yahs/commit/07e8052378ea4038bb7ae4c1e99ccab679efc133))
+* bump bumpalo from 3.20.2 to 3.20.3 ([#58](https://github.com/aaronriekenberg/yahs/issues/58)) ([a6a5ecb](https://github.com/aaronriekenberg/yahs/commit/a6a5ecbed99981d42386bbf272b40f777a9d8ab5))
+* bump displaydoc from 0.2.5 to 0.2.6 ([#63](https://github.com/aaronriekenberg/yahs/issues/63)) ([0865467](https://github.com/aaronriekenberg/yahs/commit/08654670fcdd2f78036313767eacafc3dde55f35))
+* bump http from 1.4.0 to 1.4.1 ([#62](https://github.com/aaronriekenberg/yahs/issues/62)) ([d0c5569](https://github.com/aaronriekenberg/yahs/commit/d0c5569f55c20b4aec11348051896af32360bf09))
+* bump hyper from 1.9.0 to 1.10.0 ([#65](https://github.com/aaronriekenberg/yahs/issues/65)) ([6de4d0d](https://github.com/aaronriekenberg/yahs/commit/6de4d0daf8aa6f4f9abd94e6a491d7130e703a81))
+* bump log from 0.4.29 to 0.4.30 ([#61](https://github.com/aaronriekenberg/yahs/issues/61)) ([9bcbac9](https://github.com/aaronriekenberg/yahs/commit/9bcbac9fb22c839be2e6845edf5363ec8e7938d4))
+* bump memchr from 2.8.0 to 2.8.1 ([#64](https://github.com/aaronriekenberg/yahs/issues/64)) ([07a4c78](https://github.com/aaronriekenberg/yahs/commit/07a4c78efab66b90e19ad3db6f7b3daf7f57aab8))
+
 ## [2.9.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.8.1...yahs-v2.9.0) (2026-05-22)
 
 
