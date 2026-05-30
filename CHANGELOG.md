@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.10.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.9.1...yahs-v2.10.0) (2026-05-30)
+
+
+### Features
+
+* Remove unused Cargo dependencies from the server crate ([f899286](https://github.com/aaronriekenberg/yahs/commit/f8992869d1c39fa616dd737fadcc2b8281c4a625))
+
+
+### Bug Fixes
+
+* bump mio from 1.2.0 to 1.2.1 ([#69](https://github.com/aaronriekenberg/yahs/issues/69)) ([f22d120](https://github.com/aaronriekenberg/yahs/commit/f22d120c69ff9c741087961dd188bf67fdf84cd8))
+* bump socket2 from 0.6.3 to 0.6.4 ([#68](https://github.com/aaronriekenberg/yahs/issues/68)) ([99e10a9](https://github.com/aaronriekenberg/yahs/commit/99e10a9a4b529bb353bcf45ceaa53fbf00fa9bf7))
+
 ## [2.9.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.9.0...yahs-v2.9.1) (2026-05-28)
 
 
