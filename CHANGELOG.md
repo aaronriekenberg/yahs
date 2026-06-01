@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.10.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.0...yahs-v2.10.1) (2026-06-01)
+
+
+### Bug Fixes
+
+* bump cc from 1.2.62 to 1.2.63 ([#74](https://github.com/aaronriekenberg/yahs/issues/74)) ([fa176c8](https://github.com/aaronriekenberg/yahs/commit/fa176c86805d61698bab2ca4a184592ff2b792de))
+* bump hyper from 1.10.0 to 1.10.1 ([#73](https://github.com/aaronriekenberg/yahs/issues/73)) ([7449833](https://github.com/aaronriekenberg/yahs/commit/7449833ce632d7869c5e0de2dcae516ada7ad69e))
+* bump windows-sys from 0.52.0 to 0.61.2 ([#72](https://github.com/aaronriekenberg/yahs/issues/72)) ([ff58628](https://github.com/aaronriekenberg/yahs/commit/ff586287bb91067c40639e4ecde1aadbe9edf0de))
+
 ## [2.10.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.9.1...yahs-v2.10.0) (2026-05-30)
 
 
