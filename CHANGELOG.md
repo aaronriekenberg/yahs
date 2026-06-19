@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.10.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.2...yahs-v2.10.3) (2026-06-19)
+
+
+### Bug Fixes
+
+* bump actions/checkout from 6 to 7 ([#92](https://github.com/aaronriekenberg/yahs/issues/92)) ([57ceb34](https://github.com/aaronriekenberg/yahs/commit/57ceb342b906d424eb0dba77c052f7847657b0d2))
+* bump bytes from 1.11.1 to 1.12.0 ([#93](https://github.com/aaronriekenberg/yahs/issues/93)) ([01fbcec](https://github.com/aaronriekenberg/yahs/commit/01fbcecae428ee31e72dc92228ba90b1d06c0b28))
+* bump cc from 1.2.63 to 1.2.64 ([#88](https://github.com/aaronriekenberg/yahs/issues/88)) ([c12d83b](https://github.com/aaronriekenberg/yahs/commit/c12d83b53abcc4f049b9c4ee1a4e9c572c2dd762))
+* bump getrandom from 0.4.2 to 0.4.3 ([#91](https://github.com/aaronriekenberg/yahs/issues/91)) ([73b4048](https://github.com/aaronriekenberg/yahs/commit/73b40486b4c1b5d775c110e1ab4b7fdde618a2e5))
+* bump h2 from 0.4.14 to 0.4.15 ([#89](https://github.com/aaronriekenberg/yahs/issues/89)) ([a420715](https://github.com/aaronriekenberg/yahs/commit/a4207154491f580c684cdbfe2ddb276e454a3fde))
+* bump memchr from 2.8.1 to 2.8.2 ([#85](https://github.com/aaronriekenberg/yahs/issues/85)) ([3280c8b](https://github.com/aaronriekenberg/yahs/commit/3280c8bcdd67a30baacbebff26471466ce728f96))
+* bump smallvec from 1.15.1 to 1.15.2 ([#84](https://github.com/aaronriekenberg/yahs/issues/84)) ([7b25b31](https://github.com/aaronriekenberg/yahs/commit/7b25b311875ec8ee15a89c365918d126c0d02dcd))
+* bump syn from 2.0.117 to 2.0.118 ([#90](https://github.com/aaronriekenberg/yahs/issues/90)) ([1959b17](https://github.com/aaronriekenberg/yahs/commit/1959b1716520f4ebc1b76112dcb8678db46e5c17))
+* bump wasip2 from 1.0.3+wasi-0.2.9 to 1.0.4+wasi-0.2.12 ([#87](https://github.com/aaronriekenberg/yahs/issues/87)) ([8c7a0ca](https://github.com/aaronriekenberg/yahs/commit/8c7a0cabfb6bcb1da4f9700fc8fc9eefd9136a64))
+
 ## [2.10.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.1...yahs-v2.10.2) (2026-06-10)
 
 
