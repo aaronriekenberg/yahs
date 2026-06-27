@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.10.4](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.3...yahs-v2.10.4) (2026-06-26)
+
+
+### Bug Fixes
+
+* bump actions/cache from 5 to 6 ([#98](https://github.com/aaronriekenberg/yahs/issues/98)) ([2e1cca2](https://github.com/aaronriekenberg/yahs/commit/2e1cca245aec832fca58eb3deac7c6661e24fd68))
+* bump anyhow from 1.0.102 to 1.0.103 ([#101](https://github.com/aaronriekenberg/yahs/issues/101)) ([c68e1ef](https://github.com/aaronriekenberg/yahs/commit/c68e1effea4d3629a226d513885c062a7f92ab07))
+* bump bstr from 1.12.1 to 1.12.2 ([#99](https://github.com/aaronriekenberg/yahs/issues/99)) ([80014ba](https://github.com/aaronriekenberg/yahs/commit/80014ba26e4b1e38206a818c0cc3ecd9642620c9))
+* bump bstr from 1.12.2 to 1.12.3 ([#100](https://github.com/aaronriekenberg/yahs/issues/100)) ([b6ee3a5](https://github.com/aaronriekenberg/yahs/commit/b6ee3a5c1756e72c35a0ab332f7f89135773ae78))
+* bump cc from 1.2.64 to 1.2.65 ([#94](https://github.com/aaronriekenberg/yahs/issues/94)) ([6c6db57](https://github.com/aaronriekenberg/yahs/commit/6c6db57ad4f8827c2fca55e456836ffde5d2525a))
+* bump log from 0.4.32 to 0.4.33 ([#95](https://github.com/aaronriekenberg/yahs/issues/95)) ([5c5165b](https://github.com/aaronriekenberg/yahs/commit/5c5165bea1c8817aca06b9141abc78ab372458cd))
+* bump quote from 1.0.45 to 1.0.46 ([#97](https://github.com/aaronriekenberg/yahs/issues/97)) ([d228653](https://github.com/aaronriekenberg/yahs/commit/d228653190a0f235a1a9c10b4c9bd915333edf59))
+
 ## [2.10.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.2...yahs-v2.10.3) (2026-06-19)
 
 
