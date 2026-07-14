@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.10.5](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.4...yahs-v2.10.5) (2026-07-14)
+
+
+### Bug Fixes
+
+* bump bytes from 1.12.0 to 1.12.1 ([#106](https://github.com/aaronriekenberg/yahs/issues/106)) ([5fba597](https://github.com/aaronriekenberg/yahs/commit/5fba59701bcbb935cdd9ba371ccc4c30d7246190))
+* bump cc from 1.2.65 to 1.2.66 ([#102](https://github.com/aaronriekenberg/yahs/issues/102)) ([d24c6f8](https://github.com/aaronriekenberg/yahs/commit/d24c6f866231405d6561d2e6750d8965d40de829))
+* bump cc from 1.2.66 to 1.2.67 ([#109](https://github.com/aaronriekenberg/yahs/issues/109)) ([e1399b1](https://github.com/aaronriekenberg/yahs/commit/e1399b1361311ea9a721ebbae7abe0d7a1a2d10b))
+* bump http-body from 1.0.1 to 1.1.0 ([#116](https://github.com/aaronriekenberg/yahs/issues/116)) ([15878db](https://github.com/aaronriekenberg/yahs/commit/15878dbf761c875c505f1ccbea3380ccc073cceb))
+* bump http-body-util from 0.1.3 to 0.1.4 ([#114](https://github.com/aaronriekenberg/yahs/issues/114)) ([7af82f2](https://github.com/aaronriekenberg/yahs/commit/7af82f2c4eea51f5af593ed762bca1ecb7f966b0))
+* bump memchr from 2.8.2 to 2.8.3 ([#105](https://github.com/aaronriekenberg/yahs/issues/105)) ([1235e3c](https://github.com/aaronriekenberg/yahs/commit/1235e3c59ba828bf05b3b1940a47ae3526eae5f4))
+* bump mio from 1.2.1 to 1.2.2 ([#113](https://github.com/aaronriekenberg/yahs/issues/113)) ([1704845](https://github.com/aaronriekenberg/yahs/commit/1704845013d65b73554231c6b0077431f373600f))
+* bump regex-automata from 0.4.14 to 0.4.15 ([#107](https://github.com/aaronriekenberg/yahs/issues/107)) ([7463c4c](https://github.com/aaronriekenberg/yahs/commit/7463c4c164fe75ca2a8bf93f006fbce63db09ef3))
+* bump rustversion from 1.0.22 to 1.0.23 ([#104](https://github.com/aaronriekenberg/yahs/issues/104)) ([240a7f8](https://github.com/aaronriekenberg/yahs/commit/240a7f80a3c9afef31ed8767c33b4303a31f1c6f))
+* bump socket2 from 0.6.4 to 0.6.5 ([#115](https://github.com/aaronriekenberg/yahs/issues/115)) ([85f1891](https://github.com/aaronriekenberg/yahs/commit/85f1891926e9f8282b6c2f59342d21f70f51bc9d))
+* bump thread_local from 1.1.9 to 1.1.10 ([#110](https://github.com/aaronriekenberg/yahs/issues/110)) ([21757b8](https://github.com/aaronriekenberg/yahs/commit/21757b8a7b124338184d137183bf7581acf39f4a))
+* bump winnow from 1.0.3 to 1.0.4 ([#111](https://github.com/aaronriekenberg/yahs/issues/111)) ([109252c](https://github.com/aaronriekenberg/yahs/commit/109252c89f585d31a81af5430a747eb8240dc07e))
+* bump zmij from 1.0.21 to 1.0.22 ([#108](https://github.com/aaronriekenberg/yahs/issues/108)) ([9977624](https://github.com/aaronriekenberg/yahs/commit/99776248b5e062b96f8ccc8ef7aef8b92a8db172))
+* bump zmij from 1.0.22 to 1.0.23 ([#112](https://github.com/aaronriekenberg/yahs/issues/112)) ([7a1b96b](https://github.com/aaronriekenberg/yahs/commit/7a1b96b007bbe7f81066d4bde2fe73ee4fd5815d))
+
 ## [2.10.4](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.3...yahs-v2.10.4) (2026-06-26)
 
 
