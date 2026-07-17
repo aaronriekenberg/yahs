@@ -25,6 +25,7 @@ jobs:
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          skip-token-revoke: true
 
       - uses: googleapis/release-please-action@v5
         id: release
