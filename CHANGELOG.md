@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.10.6](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.5...yahs-v2.10.6) (2026-07-20)
+
+
+### Bug Fixes
+
+* add RELEASE_APP_INSTALLATION_ID ([53e3a45](https://github.com/aaronriekenberg/yahs/commit/53e3a451ef45a8f4fcb4b7c88520a4ac4e302da9))
+* bump actions/create-github-app-token from 1 to 3 ([#127](https://github.com/aaronriekenberg/yahs/issues/127)) ([55603e8](https://github.com/aaronriekenberg/yahs/commit/55603e81ad27e7c9b74ef8b90b1f43cc68661f54))
+* bump anyhow from 1.0.103 to 1.0.104 ([#130](https://github.com/aaronriekenberg/yahs/issues/130)) ([6b4800b](https://github.com/aaronriekenberg/yahs/commit/6b4800b0e54935b57a0dc89de2161b9f3caab99c))
+* bump async-trait from 0.1.89 to 0.1.91 ([#129](https://github.com/aaronriekenberg/yahs/issues/129)) ([f93ef30](https://github.com/aaronriekenberg/yahs/commit/f93ef302c91b9e3a26eb339717764052c1c7d1c3))
+* bump bitflags from 2.13.0 to 2.13.1 ([#122](https://github.com/aaronriekenberg/yahs/issues/122)) ([f260d31](https://github.com/aaronriekenberg/yahs/commit/f260d31dd02dff99b5658075547bb82d22213cb5))
+* bump bstr from 1.12.3 to 1.13.0 ([#120](https://github.com/aaronriekenberg/yahs/issues/120)) ([f7d1993](https://github.com/aaronriekenberg/yahs/commit/f7d1993510e8dfcdcaaf0ae2e780b152adee344a))
+* bump cc from 1.2.67 to 1.3.0 ([#131](https://github.com/aaronriekenberg/yahs/issues/131)) ([68975c1](https://github.com/aaronriekenberg/yahs/commit/68975c1d677b95323266e2151cef49c3ccaa0265))
+* bump clap from 4.6.1 to 4.6.2 ([#125](https://github.com/aaronriekenberg/yahs/issues/125)) ([37b15e6](https://github.com/aaronriekenberg/yahs/commit/37b15e65f2ed31f5a78e36c5eb68c21e4233531c))
+* bump futures-channel from 0.3.32 to 0.3.33 ([#133](https://github.com/aaronriekenberg/yahs/issues/133)) ([43595c4](https://github.com/aaronriekenberg/yahs/commit/43595c402c34d98283d497ac12c493381dfeb15c))
+* bump futures-io from 0.3.32 to 0.3.33 ([#135](https://github.com/aaronriekenberg/yahs/issues/135)) ([2eafa6c](https://github.com/aaronriekenberg/yahs/commit/2eafa6c69c0821072596195cb4e9d55f1b81d636))
+* bump futures-task from 0.3.32 to 0.3.33 ([#137](https://github.com/aaronriekenberg/yahs/issues/137)) ([3ebb145](https://github.com/aaronriekenberg/yahs/commit/3ebb1451e6214630c1bbb10045ecd2deaa2a6195))
+* bump globset from 0.4.18 to 0.4.19 ([#123](https://github.com/aaronriekenberg/yahs/issues/123)) ([b7ba09f](https://github.com/aaronriekenberg/yahs/commit/b7ba09fae38593a88b33b139db38d8e8176e4281))
+* bump hdrhistogram from 7.5.4 to 7.6.0 ([#132](https://github.com/aaronriekenberg/yahs/issues/132)) ([0ef4423](https://github.com/aaronriekenberg/yahs/commit/0ef44233d43388f4863fb91d699c8c981bafb09e))
+* bump proc-macro2 from 1.0.106 to 1.0.107 ([#136](https://github.com/aaronriekenberg/yahs/issues/136)) ([ff87565](https://github.com/aaronriekenberg/yahs/commit/ff87565e35896803c9b3451ae7edb022ebb36435))
+* bump quote from 1.0.46 to 1.0.47 ([#134](https://github.com/aaronriekenberg/yahs/issues/134)) ([a7edc1d](https://github.com/aaronriekenberg/yahs/commit/a7edc1d001c27069cb0827001c2065f83eb6ec9f))
+* bump regex-automata from 0.4.15 to 0.4.16 ([#124](https://github.com/aaronriekenberg/yahs/issues/124)) ([cebc521](https://github.com/aaronriekenberg/yahs/commit/cebc521348268ef055bbd00edd5b5da43a8fc0df))
+* bump syn from 2.0.118 to 2.0.119 ([#117](https://github.com/aaronriekenberg/yahs/issues/117)) ([2b1768b](https://github.com/aaronriekenberg/yahs/commit/2b1768bf6767b065c421cab33ee65446e3088492))
+* bump tokio from 1.52.3 to 1.52.4 ([#126](https://github.com/aaronriekenberg/yahs/issues/126)) ([112cf80](https://github.com/aaronriekenberg/yahs/commit/112cf8062ca51ddb6b3cd417e02f4f2c6a55e1c4))
+* bump tokio from 1.52.4 to 1.53.0 ([#128](https://github.com/aaronriekenberg/yahs/issues/128)) ([0a4989c](https://github.com/aaronriekenberg/yahs/commit/0a4989cbe1a762e6f9c340684b5df9dba17748bc))
+* bump toml from 1.1.2+spec-1.1.0 to 1.1.3+spec-1.1.0 ([#119](https://github.com/aaronriekenberg/yahs/issues/119)) ([6e2a4c9](https://github.com/aaronriekenberg/yahs/commit/6e2a4c90b78582cd203c61953e683ca01a44b56a))
+* give release please CI job permission to run on merge via github app token ([a8f974f](https://github.com/aaronriekenberg/yahs/commit/a8f974f9883339db332d1f503143a8c0575e3cde))
+
 ## [2.10.5](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.4...yahs-v2.10.5) (2026-07-14)
 
 
