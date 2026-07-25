@@ -41,6 +41,90 @@ $EDITOR yahs.toml
 ./target/release/yahs --config yahs.toml
 ```
 
+## Docker
+
+The Docker image is built with a distroless base for minimal size and attack surface. The default config is bundled at `/etc/yahs.toml`.
+
+### Using docker run
+
+```bash
+# Pull the image
+docker pull <your-username>/yahs:latest
+
+# Run with default config
+docker run -p 8080:8080 <your-username>/yahs:latest
+
+# Run with custom config
+docker run -p 8080:8080 \
+  -v $(pwd)/yahs.toml:/etc/yahs.toml:ro \
+  <your-username>/yahs:latest
+```
+
+### Using docker-compose
+
+Create a `docker-compose.yml` to easily manage the container and override the config:
+
+```yaml
+version: '3.8'
+
+services:
+  yahs:
+    image: <your-username>/yahs:latest
+    container_name: yahs-server
+    ports:
+      - "8080:8080"
+    volumes:
+      # Override the default config file
+      - ./yahs.toml:/etc/yahs.toml:ro
+      # Mount a directory to serve static files (optional)
+      - ./www:/app/www:ro
+    environment:
+      RUST_LOG: info
+    restart: unless-stopped
+```
+
+Then run:
+
+```bash
+# Start the server
+docker-compose up -d
+
+# View logs
+docker-compose logs -f yahs
+
+# Stop the server
+docker-compose down
+```
+
+### Configuration in Docker
+
+The default config uses:
+- **Bind address**: `0.0.0.0:8080`
+- **Root directory**: `/app` (inside the container)
+- **Config file location**: `/etc/yahs.toml`
+
+To use a custom config:
+
+1. Create a `yahs.toml` file on your host
+2. Mount it at `/etc/yahs.toml` in the container (read-only recommended)
+3. Mount any required directories (static files, error pages) under `/app`
+
+**Example docker-compose.yml with multiple mounts:**
+
+```yaml
+services:
+  yahs:
+    image: <your-username>/yahs:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./yahs.toml:/etc/yahs.toml:ro
+      - ./www:/app/www:ro
+      - ./errors:/app/errors:ro
+    environment:
+      RUST_LOG: debug
+```
+
 ## Configuration
 
 yahs is configured with a single TOML file.  See [`yahs.example.toml`](yahs.example.toml)

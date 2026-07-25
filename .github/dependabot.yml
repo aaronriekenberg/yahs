@@ -20,3 +20,13 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "fix"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: daily
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "fix"
