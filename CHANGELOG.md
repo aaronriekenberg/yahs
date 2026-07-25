@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.11.0...yahs-v2.11.1) (2026-07-25)
+
+
+### Bug Fixes
+
+* fix tags in docker hub ([#159](https://github.com/aaronriekenberg/yahs/issues/159)) ([c033170](https://github.com/aaronriekenberg/yahs/commit/c033170f1433b881f5d8388c7c9085657d95b5e0))
+
 ## [2.11.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.10.6...yahs-v2.11.0) (2026-07-25)
 
 
