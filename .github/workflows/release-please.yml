@@ -112,30 +112,30 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+       - name: Set up Docker Buildx
+         uses: docker/setup-buildx-action@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+       - name: Log in to Docker Hub
+         uses: docker/login-action@v4
+         with:
+           username: ${{ secrets.DOCKERHUB_USERNAME }}
+           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract version from tag
-        id: version
-        run: |
-          TAG="${{ needs.release-please.outputs.tag_name }}"
-          VERSION="${TAG#v}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+       - name: Extract version from tag
+         id: version
+         run: |
+           TAG="${{ needs.release-please.outputs.tag_name }}"
+           VERSION="${TAG#v}"
+           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/yahs:${{ steps.version.outputs.version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/yahs:latest
-          labels: |
-            org.opencontainers.image.version=${{ steps.version.outputs.version }}
-            org.opencontainers.image.source=https://github.com/aaronriekenberg/yahs
+       - name: Build and push Docker image
+         uses: docker/build-push-action@v7
+         with:
+           context: .
+           push: true
+           tags: |
+             ${{ secrets.DOCKERHUB_USERNAME }}/yahs:${{ steps.version.outputs.version }}
+             ${{ secrets.DOCKERHUB_USERNAME }}/yahs:latest
+           labels: |
+             org.opencontainers.image.version=${{ steps.version.outputs.version }}
+             org.opencontainers.image.source=https://github.com/aaronriekenberg/yahs
