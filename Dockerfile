@@ -5,7 +5,7 @@ COPY . /app
 RUN cargo build --release
 
 # Runtime stage - distroless
-FROM gcr.io/distroless/cc-debian12
+FROM gcr.io/distroless/cc-debian13
 
 # Copy the compiled binary
 COPY --from=build-env /app/target/release/yahs /usr/local/bin/yahs
