@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.11.1...yahs-v2.12.0) (2026-07-26)
+
+
+### Features
+
+* Add CLAUDE.md ([#161](https://github.com/aaronriekenberg/yahs/issues/161)) ([e1dfda4](https://github.com/aaronriekenberg/yahs/commit/e1dfda4a026a64834f5392946848e45e38a2aec2))
+
 ## [2.11.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.11.0...yahs-v2.11.1) (2026-07-25)
 
 
