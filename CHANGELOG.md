@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.12.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.0...yahs-v2.12.1) (2026-07-31)
+
+
+### Bug Fixes
+
+* bump clap from 4.6.3 to 4.6.4 ([#168](https://github.com/aaronriekenberg/yahs/issues/168)) ([c983447](https://github.com/aaronriekenberg/yahs/commit/c98344782adeee2737b0143bd0423744fc5b5aed))
+* bump docker/login-action from 4 to 4.5.2 ([#171](https://github.com/aaronriekenberg/yahs/issues/171)) ([68513f2](https://github.com/aaronriekenberg/yahs/commit/68513f2d4efc467d62760a10502486ae9020cb76))
+* bump hashbrown from 0.17.0 to 0.17.1 ([#166](https://github.com/aaronriekenberg/yahs/issues/166)) ([c4830b2](https://github.com/aaronriekenberg/yahs/commit/c4830b224c0a9f737079320393bb4b20a54b730b))
+* bump http from 1.4.2 to 1.5.0 ([#169](https://github.com/aaronriekenberg/yahs/issues/169)) ([6d8b671](https://github.com/aaronriekenberg/yahs/commit/6d8b671d92de47b9dc1555c69091091d46a12194))
+* bump syn from 3.0.1 to 3.0.3 ([#164](https://github.com/aaronriekenberg/yahs/issues/164)) ([049a889](https://github.com/aaronriekenberg/yahs/commit/049a8894a62e912e0364960d918aca2689cbcfd0))
+* bump tokio-macros from 2.7.1 to 2.7.2 ([#170](https://github.com/aaronriekenberg/yahs/issues/170)) ([103fa70](https://github.com/aaronriekenberg/yahs/commit/103fa7086ccda34cf30125ca8c54fbb7415e5b1c))
+* bump toml from 1.1.3+spec-1.1.0 to 1.1.4+spec-1.1.0 ([#165](https://github.com/aaronriekenberg/yahs/issues/165)) ([43a4fa3](https://github.com/aaronriekenberg/yahs/commit/43a4fa31dc48c628891add89310d7ea11a1a9456))
+* bump toml_parser from 1.1.2+spec-1.1.0 to 1.1.3+spec-1.1.0 ([#163](https://github.com/aaronriekenberg/yahs/issues/163)) ([2a9f726](https://github.com/aaronriekenberg/yahs/commit/2a9f72625d3019f14b6c3deaa9baf08e7b24f1ce))
+
 ## [2.12.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.11.1...yahs-v2.12.0) (2026-07-26)
 
 
