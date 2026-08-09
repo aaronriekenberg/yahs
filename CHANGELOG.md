@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.12.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.1...yahs-v2.12.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* bump aho-corasick from 1.1.4 to 1.1.5 ([#176](https://github.com/aaronriekenberg/yahs/issues/176)) ([cf97a7e](https://github.com/aaronriekenberg/yahs/commit/cf97a7e3ebd1a21e9496d1e0689244a53687a409))
+* bump clap from 4.6.4 to 4.6.5 ([#174](https://github.com/aaronriekenberg/yahs/issues/174)) ([4be9b3c](https://github.com/aaronriekenberg/yahs/commit/4be9b3c5e14b2077cab375f62cabe7bba42de023))
+* bump docker/login-action from 4.5.2 to 4.6.0 ([#172](https://github.com/aaronriekenberg/yahs/issues/172)) ([8308a1a](https://github.com/aaronriekenberg/yahs/commit/8308a1a8fc6a3b0834228a978304f3185bb9ca13))
+* bump ipnet from 2.12.0 to 2.12.1 ([#175](https://github.com/aaronriekenberg/yahs/issues/175)) ([265d562](https://github.com/aaronriekenberg/yahs/commit/265d56221f0c9df53773461b60a415012bc1d72d))
+
 ## [2.12.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.0...yahs-v2.12.1) (2026-07-31)
 
 
