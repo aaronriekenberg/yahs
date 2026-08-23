@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.12.4](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.3...yahs-v2.12.4) (2026-08-21)
+
+
+### Bug Fixes
+
+* bump cc from 1.4.2 to 1.4.3 ([#197](https://github.com/aaronriekenberg/yahs/issues/197)) ([6b2a9df](https://github.com/aaronriekenberg/yahs/commit/6b2a9df33d06dd8249462047cf17dc3ddf5cedf0))
+* bump find-msvc-tools from 0.1.10 to 0.1.11 ([#196](https://github.com/aaronriekenberg/yahs/issues/196)) ([eab986e](https://github.com/aaronriekenberg/yahs/commit/eab986ed614735098d6fe6fc60563f2c1392defb))
+* bump futures from 0.3.33 to 0.3.34 ([#189](https://github.com/aaronriekenberg/yahs/issues/189)) ([fcda67f](https://github.com/aaronriekenberg/yahs/commit/fcda67ff87e6dbd2f6db19e36d6b45c29247edab))
+* bump futures-channel from 0.3.33 to 0.3.34 ([#188](https://github.com/aaronriekenberg/yahs/issues/188)) ([a33cdf9](https://github.com/aaronriekenberg/yahs/commit/a33cdf944eafddff495d56dc986bc0610bbf85bf))
+* bump futures-core from 0.3.33 to 0.3.34 ([#194](https://github.com/aaronriekenberg/yahs/issues/194)) ([1b51a65](https://github.com/aaronriekenberg/yahs/commit/1b51a6550af7092d4443716f676ddf1f3a6b3b26))
+* bump futures-io from 0.3.33 to 0.3.34 ([#193](https://github.com/aaronriekenberg/yahs/issues/193)) ([caca54e](https://github.com/aaronriekenberg/yahs/commit/caca54eecbfb1531d5f7035d0cea077a169c50cf))
+* bump futures-sink from 0.3.33 to 0.3.34 ([#191](https://github.com/aaronriekenberg/yahs/issues/191)) ([64d01fd](https://github.com/aaronriekenberg/yahs/commit/64d01fd3ab68cedc85e30565a55f0a5a278c99c0))
+* bump futures-task from 0.3.33 to 0.3.34 ([#192](https://github.com/aaronriekenberg/yahs/issues/192)) ([43b97ea](https://github.com/aaronriekenberg/yahs/commit/43b97ea2cca9d8f8011109f2fa080c020ada074a))
+* bump h2 from 0.4.15 to 0.4.16 ([#198](https://github.com/aaronriekenberg/yahs/issues/198)) ([7d7b94e](https://github.com/aaronriekenberg/yahs/commit/7d7b94e38d41bd7d059a445eef297d5432ec152e))
+* bump http-body-util from 0.1.4 to 0.1.5 ([#190](https://github.com/aaronriekenberg/yahs/issues/190)) ([b0f9a07](https://github.com/aaronriekenberg/yahs/commit/b0f9a0716a1becc989c4c6bbc7574b79a4f35019))
+
 ## [2.12.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.2...yahs-v2.12.3) (2026-08-14)
 
 
