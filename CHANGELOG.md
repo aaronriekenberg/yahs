@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.12.5](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.4...yahs-v2.12.5) (2026-08-28)
+
+
+### Bug Fixes
+
+* bump cc from 1.4.3 to 1.4.4 ([#199](https://github.com/aaronriekenberg/yahs/issues/199)) ([485a02d](https://github.com/aaronriekenberg/yahs/commit/485a02d39dbc66248e200ffbdd7cd07ba8f2c202))
+* bump h2 from 0.4.18 to 0.4.19 ([#203](https://github.com/aaronriekenberg/yahs/issues/203)) ([a84de39](https://github.com/aaronriekenberg/yahs/commit/a84de39b581b3fdf35d5999ebf240aac01d78715))
+* bump log from 0.4.33 to 0.4.34 ([#201](https://github.com/aaronriekenberg/yahs/issues/201)) ([ae4ce4e](https://github.com/aaronriekenberg/yahs/commit/ae4ce4eb094673d4598009afa01221c3ab401ed8))
+* bump syn from 3.0.3 to 3.0.4 ([#202](https://github.com/aaronriekenberg/yahs/issues/202)) ([94eef42](https://github.com/aaronriekenberg/yahs/commit/94eef42d573885c89181c4f82dc1ade315f05893))
+
 ## [2.12.4](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.3...yahs-v2.12.4) (2026-08-21)
 
 
