@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.12.6](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.5...yahs-v2.12.6) (2026-09-01)
+
+
+### Bug Fixes
+
+* bump hyper from 1.11.0 to 1.11.1 ([#205](https://github.com/aaronriekenberg/yahs/issues/205)) ([0593806](https://github.com/aaronriekenberg/yahs/commit/0593806775b5f4356a771ba319face5ed720b3d0))
+* bump indexmap from 2.14.0 to 2.14.1 ([#204](https://github.com/aaronriekenberg/yahs/issues/204)) ([5578773](https://github.com/aaronriekenberg/yahs/commit/55787738bba5cc039817e757617fdb95986ba6aa))
+
 ## [2.12.5](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.4...yahs-v2.12.5) (2026-08-28)
 
 
