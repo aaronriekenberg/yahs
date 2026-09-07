@@ -148,13 +148,12 @@ async fn start_proxy(
         cache_max_age_secs: 0,
         extra_request_headers: Default::default(),
         remove_request_headers: vec![],
+        blocked_paths: vec![],
     };
 
-    let handler = Arc::new(ReverseProxyHandler::new(
-        proxy_config,
-        "/".to_string(),
-        &upstream_config,
-    )) as Arc<dyn Handler>;
+    let handler = Arc::new(
+        ReverseProxyHandler::new(proxy_config, "/".to_string(), &upstream_config).unwrap(),
+    ) as Arc<dyn Handler>;
 
     let state = make_app_state();
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

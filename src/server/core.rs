@@ -48,7 +48,7 @@ fn build_handlers(config: &Config) -> Result<HashMap<String, Arc<dyn Handler>>> 
                     .get(rp_config.upstream.as_str())
                     .ok_or_else(|| anyhow::anyhow!("Unknown upstream: {}", rp_config.upstream))?;
                 let h =
-                    ReverseProxyHandler::new(rp_config.clone(), location.path.clone(), upstream);
+                    ReverseProxyHandler::new(rp_config.clone(), location.path.clone(), upstream)?;
                 Arc::new(h)
             }
             HandlerConfig::Health => Arc::new(HealthHandler),

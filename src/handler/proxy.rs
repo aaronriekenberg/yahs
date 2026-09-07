@@ -4,6 +4,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use async_trait::async_trait;
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use http_body_util::BodyExt;
 use hyper::{
     Request, Response, Uri,
@@ -66,6 +67,8 @@ pub struct ReverseProxyHandler {
     config: ReverseProxyConfig,
     location_prefix: String,
     upstream: Arc<UpstreamRuntime>,
+    /// Compiled glob set for blocked paths (returns 404 on match).
+    blocked_set: GlobSet,
 }
 
 impl ReverseProxyHandler {
@@ -73,14 +76,16 @@ impl ReverseProxyHandler {
         config: ReverseProxyConfig,
         location_prefix: String,
         upstream_config: &UpstreamConfig,
-    ) -> Self {
+    ) -> anyhow::Result<Self> {
         let upstream = Arc::new(UpstreamRuntime::new(upstream_config));
+        let blocked_set = build_glob_set(&config.blocked_paths)?;
 
-        Self {
+        Ok(Self {
             config,
             location_prefix,
             upstream,
-        }
+            blocked_set,
+        })
     }
 }
 
@@ -91,6 +96,21 @@ impl Handler for ReverseProxyHandler {
         req: Request<Incoming>,
         _state: &AppState,
     ) -> Result<HandlerResponse, AppError> {
+        // Check blocked paths before proxying.
+        let uri_path = req.uri().path();
+        let rel_path = if self.config.strip_prefix {
+            uri_path
+                .strip_prefix(&self.location_prefix)
+                .unwrap_or(uri_path)
+        } else {
+            uri_path
+        };
+
+        // Reject blocked paths.
+        if self.blocked_set.is_match(rel_path.trim_start_matches('/')) {
+            return Err(AppError::NotFound);
+        }
+
         let client_ip_ext = req
             .extensions()
             .get::<String>()
@@ -364,4 +384,65 @@ fn ip_fnv1a(s: &str) -> usize {
     s.bytes().fold(FNV_OFFSET, |acc, b| {
         (acc ^ b as usize).wrapping_mul(FNV_PRIME)
     })
+}
+
+/// Build a `GlobSet` from a slice of pattern strings.
+/// Each pattern is matched case-sensitively.  Patterns without a `/` are
+/// automatically treated as path-component substring matches by wrapping them
+/// in `**/<pattern>/**` and `**/<pattern>` forms so that e.g. `".git"` blocks
+/// any path segment named `.git`.
+fn build_glob_set(patterns: &[String]) -> anyhow::Result<GlobSet> {
+    let mut builder = GlobSetBuilder::new();
+    for pattern in patterns {
+        // If the pattern has no path separator and no wildcard, treat it as a
+        // path-component match: block any path that *contains* the segment.
+        if !pattern.contains('/') && !pattern.contains('*') && !pattern.contains('?') {
+            builder.add(Glob::new(&format!("**/{pattern}"))?);
+            builder.add(Glob::new(&format!("**/{pattern}/**"))?);
+            builder.add(Glob::new(pattern)?);
+        } else {
+            builder.add(Glob::new(pattern)?);
+        }
+    }
+    Ok(builder.build()?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn blocked_path_plain_segment_is_blocked() {
+        let patterns = vec![".git".to_owned()];
+        let set = build_glob_set(&patterns).unwrap();
+        // Bare segment
+        assert!(set.is_match(".git"));
+        // Nested
+        assert!(set.is_match("repo/.git"));
+        assert!(set.is_match("repo/.git/config"));
+    }
+
+    #[test]
+    fn blocked_path_glob_pattern_is_blocked() {
+        let patterns = vec!["**/.env".to_owned()];
+        let set = build_glob_set(&patterns).unwrap();
+        assert!(set.is_match("subdir/.env"));
+        assert!(!set.is_match("subdir/app.env")); // different name
+    }
+
+    #[test]
+    fn blocked_path_unrelated_path_is_not_blocked() {
+        let patterns = vec![".git".to_owned()];
+        let set = build_glob_set(&patterns).unwrap();
+        assert!(!set.is_match("index.html"));
+        assert!(!set.is_match("api/v1/users"));
+    }
+
+    #[test]
+    fn empty_blocked_paths_blocks_nothing() {
+        let patterns: Vec<String> = vec![];
+        let set = build_glob_set(&patterns).unwrap();
+        assert!(!set.is_match(".git"));
+        assert!(!set.is_match("secret/.env"));
+    }
 }

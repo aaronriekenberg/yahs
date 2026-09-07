@@ -127,6 +127,10 @@ path = "/api"
   # strip_prefix = false
   # cache_max_age_secs = 0
   # remove_request_headers = []
+  # Paths blocked with 404 (glob patterns matched against the path relative to
+  # the location prefix).  A plain name like ".git" also matches any path
+  # segment, e.g. "repo/.git/config".
+  # blocked_paths    = []
 
   # [locations.handler.extra_request_headers]
   # "X-Proxy" = "yahs"
