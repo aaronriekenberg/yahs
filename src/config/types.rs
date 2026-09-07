@@ -277,6 +277,12 @@ pub struct ReverseProxyConfig {
     /// Request headers to remove before forwarding.
     #[serde(default, alias = "remove_headers")]
     pub remove_request_headers: Vec<String>,
+
+    /// Glob patterns for paths that should always return 404.
+    /// Matched against the request path relative to the location prefix.
+    /// Example: `[".git", "**/.env"]`
+    #[serde(default)]
+    pub blocked_paths: Vec<String>,
 }
 
 fn default_proxy_cache_max_age() -> u64 {
