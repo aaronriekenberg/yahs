@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.13.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.6...yahs-v2.13.0) (2026-09-07)
+
+
+### Features
+
+* add blocked_paths support to reverse proxy handler ([#211](https://github.com/aaronriekenberg/yahs/issues/211)) ([23da932](https://github.com/aaronriekenberg/yahs/commit/23da93285dab7f4dda8fcba9b2b5ae150d143dd6))
+
+
+### Bug Fixes
+
+* bump mio from 1.2.2 to 1.2.3 ([#209](https://github.com/aaronriekenberg/yahs/issues/209)) ([388ad64](https://github.com/aaronriekenberg/yahs/commit/388ad646fed76c6621e8afcd06c9e630adebd67b))
+* bump smallvec from 1.15.2 to 1.16.0 ([#207](https://github.com/aaronriekenberg/yahs/issues/207)) ([4e68592](https://github.com/aaronriekenberg/yahs/commit/4e685928bc1380a1da896826ee9a52d23ad5dd6f))
+* bump toml from 1.1.4+spec-1.1.0 to 1.1.5+spec-1.1.0 ([#208](https://github.com/aaronriekenberg/yahs/issues/208)) ([7b95ce2](https://github.com/aaronriekenberg/yahs/commit/7b95ce252260eb5facd01c7c9f1b9159fc752fab))
+
 ## [2.12.6](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.5...yahs-v2.12.6) (2026-09-01)
 
 
