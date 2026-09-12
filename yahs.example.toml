@@ -131,6 +131,10 @@ path = "/api"
   # the location prefix).  A plain name like ".git" also matches any path
   # segment, e.g. "repo/.git/config".
   # blocked_paths    = []
+  # Block requests containing "/.".  When true, any URL path containing "/."
+  # (e.g., "/../", "/./") will return 404.  Useful for blocking path traversal
+  # and dot-file access attempts.
+  # block_dot_paths  = false
 
   # [locations.handler.extra_request_headers]
   # "X-Proxy" = "yahs"
@@ -150,6 +154,10 @@ path = "/"
   # the location prefix).  A plain name like ".git" also matches any path
   # segment, e.g. "repo/.git/config".
   # blocked_paths    = []
+  # Block requests containing "/.".  When true, any URL path containing "/."
+  # (e.g., "/../", "/./") will return 404.  Useful for blocking path traversal
+  # and dot-file access attempts.
+  # block_dot_paths  = false
 
   # Per-path cache rules — first matching rule wins.
   # Patterns are globs matched against the path relative to the location prefix.
