@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.14.0...yahs-v2.15.0) (2026-09-12)
+
+
+### Features
+
+* extract build_glob_set to shared glob_utils module ([83a1d3b](https://github.com/aaronriekenberg/yahs/commit/83a1d3bcf9edcd23a570879f0bbb88738bb88036))
+
 ## [2.14.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.13.0...yahs-v2.14.0) (2026-09-12)
 
 
