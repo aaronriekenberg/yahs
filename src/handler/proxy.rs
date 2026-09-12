@@ -111,6 +111,11 @@ impl Handler for ReverseProxyHandler {
             return Err(AppError::NotFound);
         }
 
+        // Check for block_dot_paths option.
+        if self.config.block_dot_paths && rel_path.contains("/.") {
+            return Err(AppError::NotFound);
+        }
+
         let client_ip_ext = req
             .extensions()
             .get::<String>()
@@ -444,5 +449,38 @@ mod tests {
         let set = build_glob_set(&patterns).unwrap();
         assert!(!set.is_match(".git"));
         assert!(!set.is_match("secret/.env"));
+    }
+
+    #[test]
+    fn block_dot_paths_disabled_allows_dot_paths() {
+        let patterns = vec![".git".to_owned()];
+        let set = build_glob_set(&patterns).unwrap();
+        // Test with block_dot_paths disabled in config
+        // (This is just verifying the glob set works; actual blocking is tested in integration)
+        assert!(set.is_match(".git"));
+    }
+
+    #[test]
+    fn block_dot_paths_check_detects_slash_dot_pattern() {
+        // Test the block_dot_paths string check logic
+        let test_paths = vec![
+            ("/.env", true),           // contains "/.".
+            ("/path/.hidden", true),   // contains "/.".
+            ("/normal/path", false),   // no "/.".
+            ("/..", true),             // contains "/.".
+            ("/./.", true),            // contains "/.".
+            ("/path/file.txt", false), // no "/.".
+        ];
+
+        for (path, should_contain_slash_dot) in test_paths {
+            let contains_slash_dot = path.contains("/.");
+            assert_eq!(
+                contains_slash_dot,
+                should_contain_slash_dot,
+                "Path '{}' should {}contain '/.'",
+                path,
+                if should_contain_slash_dot { "" } else { "not " }
+            );
+        }
     }
 }

@@ -188,6 +188,11 @@ pub struct StaticFilesConfig {
     #[serde(default)]
     pub blocked_paths: Vec<String>,
 
+    /// Block requests containing "/.".  When true, any URL path containing
+    /// "/./" or "/.*" will return 404.  Defaults to false.
+    #[serde(default)]
+    pub block_dot_paths: bool,
+
     /// Attempt to serve precompressed variants before the raw file.
     #[serde(default = "default_true")]
     pub precompressed: bool,
@@ -283,6 +288,11 @@ pub struct ReverseProxyConfig {
     /// Example: `[".git", "**/.env"]`
     #[serde(default)]
     pub blocked_paths: Vec<String>,
+
+    /// Block requests containing "/.".  When true, any URL path containing
+    /// "/./" or "/.*" will return 404.  Defaults to false.
+    #[serde(default)]
+    pub block_dot_paths: bool,
 }
 
 fn default_proxy_cache_max_age() -> u64 {

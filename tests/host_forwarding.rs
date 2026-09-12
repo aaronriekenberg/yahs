@@ -149,6 +149,7 @@ async fn start_proxy(
         extra_request_headers: Default::default(),
         remove_request_headers: vec![],
         blocked_paths: vec![],
+        block_dot_paths: false,
     };
 
     let handler = Arc::new(

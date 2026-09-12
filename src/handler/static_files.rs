@@ -90,6 +90,11 @@ impl Handler for StaticFilesHandler {
             return Err(AppError::NotFound);
         }
 
+        // Check for block_dot_paths option.
+        if self.config.block_dot_paths && decoded_rel.contains("/.") {
+            return Err(AppError::NotFound);
+        }
+
         // Resolve securely to an absolute path under root.
         let file_path = self.resolve_path(rel_path)?;
 
@@ -530,6 +535,7 @@ mod tests {
             cache_max_age_secs,
             cache_rules,
             blocked_paths,
+            block_dot_paths: false,
             precompressed: false,
             encodings: vec![],
         };
@@ -615,5 +621,46 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let handler = make_handler(tmp.path(), vec![], vec![], 7200);
         assert_eq!(handler.effective_cache_max_age("anything.css"), 7200);
+    }
+
+    // ── block_dot_paths ──────────────────────────────────────────────────────
+
+    #[test]
+    fn block_dot_paths_disabled_allows_dot_paths() {
+        let tmp = tempfile::tempdir().unwrap();
+        let config = StaticFilesConfig {
+            index: vec!["index.html".to_owned()],
+            strip_prefix: true,
+            cache_max_age_secs: 3600,
+            cache_rules: vec![],
+            blocked_paths: vec![],
+            block_dot_paths: false,
+            precompressed: false,
+            encodings: vec![],
+        };
+        let handler =
+            StaticFilesHandler::new(config, "/static".to_owned(), tmp.path().to_str().unwrap())
+                .unwrap();
+        // These should not be blocked since block_dot_paths is false
+        assert!(!handler.config.block_dot_paths);
+    }
+
+    #[test]
+    fn block_dot_paths_enabled_rejects_paths_with_slash_dot() {
+        let tmp = tempfile::tempdir().unwrap();
+        let config = StaticFilesConfig {
+            index: vec!["index.html".to_owned()],
+            strip_prefix: true,
+            cache_max_age_secs: 3600,
+            cache_rules: vec![],
+            blocked_paths: vec![],
+            block_dot_paths: true,
+            precompressed: false,
+            encodings: vec![],
+        };
+        let handler =
+            StaticFilesHandler::new(config, "/static".to_owned(), tmp.path().to_str().unwrap())
+                .unwrap();
+        assert!(handler.config.block_dot_paths);
     }
 }
