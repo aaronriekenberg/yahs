@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.14.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.13.0...yahs-v2.14.0) (2026-09-12)
+
+
+### Features
+
+* add block_dot_paths option to static_files and reverse_proxy handlers ([98f92d4](https://github.com/aaronriekenberg/yahs/commit/98f92d4a459f4cc495d1b7de6e54b6112bb2dfe2))
+
+
+### Bug Fixes
+
+* bump cc from 1.4.4 to 1.4.5 ([#213](https://github.com/aaronriekenberg/yahs/issues/213)) ([5613c28](https://github.com/aaronriekenberg/yahs/commit/5613c28627495d91e0d269796a1676e94718531f))
+* bump find-msvc-tools from 0.1.11 to 0.1.12 ([#215](https://github.com/aaronriekenberg/yahs/issues/215)) ([eda1ccc](https://github.com/aaronriekenberg/yahs/commit/eda1ccc5c17a2e4f6e75fc3ee30a25640dff8fb7))
+* bump indexmap from 2.14.1 to 2.14.2 ([#214](https://github.com/aaronriekenberg/yahs/issues/214)) ([1e8c05b](https://github.com/aaronriekenberg/yahs/commit/1e8c05bf7180799d6853b9a2b63d455b99ad3383))
+* bump ipnet from 2.12.1 to 2.12.2 ([#217](https://github.com/aaronriekenberg/yahs/issues/217)) ([ffa3615](https://github.com/aaronriekenberg/yahs/commit/ffa36156246a6832a5cf46307b220f9dba16e7da))
+* bump syn from 3.0.4 to 3.0.5 ([#212](https://github.com/aaronriekenberg/yahs/issues/212)) ([c01b7b2](https://github.com/aaronriekenberg/yahs/commit/c01b7b2873131a53e872a771feb19ab3e4f8384d))
+
 ## [2.13.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.12.6...yahs-v2.13.0) (2026-09-07)
 
 
