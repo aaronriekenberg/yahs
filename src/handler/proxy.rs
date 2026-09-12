@@ -4,7 +4,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use globset::{Glob, GlobSet, GlobSetBuilder};
+use globset::GlobSet;
 use http_body_util::BodyExt;
 use hyper::{
     Request, Response, Uri,
@@ -17,6 +17,7 @@ use tracing::debug;
 
 use crate::config::{BackendConfig, LoadBalancingStrategy, ReverseProxyConfig, UpstreamConfig};
 use crate::error::AppError;
+use crate::glob_utils;
 use crate::handler::{BoxBody, Handler, HandlerResponse};
 use crate::server::state::AppState;
 
@@ -78,7 +79,7 @@ impl ReverseProxyHandler {
         upstream_config: &UpstreamConfig,
     ) -> anyhow::Result<Self> {
         let upstream = Arc::new(UpstreamRuntime::new(upstream_config));
-        let blocked_set = build_glob_set(&config.blocked_paths)?;
+        let blocked_set = glob_utils::build_glob_set(&config.blocked_paths)?;
 
         Ok(Self {
             config,
@@ -391,27 +392,6 @@ fn ip_fnv1a(s: &str) -> usize {
     })
 }
 
-/// Build a `GlobSet` from a slice of pattern strings.
-/// Each pattern is matched case-sensitively.  Patterns without a `/` are
-/// automatically treated as path-component substring matches by wrapping them
-/// in `**/<pattern>/**` and `**/<pattern>` forms so that e.g. `".git"` blocks
-/// any path segment named `.git`.
-fn build_glob_set(patterns: &[String]) -> anyhow::Result<GlobSet> {
-    let mut builder = GlobSetBuilder::new();
-    for pattern in patterns {
-        // If the pattern has no path separator and no wildcard, treat it as a
-        // path-component match: block any path that *contains* the segment.
-        if !pattern.contains('/') && !pattern.contains('*') && !pattern.contains('?') {
-            builder.add(Glob::new(&format!("**/{pattern}"))?);
-            builder.add(Glob::new(&format!("**/{pattern}/**"))?);
-            builder.add(Glob::new(pattern)?);
-        } else {
-            builder.add(Glob::new(pattern)?);
-        }
-    }
-    Ok(builder.build()?)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -419,7 +399,7 @@ mod tests {
     #[test]
     fn blocked_path_plain_segment_is_blocked() {
         let patterns = vec![".git".to_owned()];
-        let set = build_glob_set(&patterns).unwrap();
+        let set = glob_utils::build_glob_set(&patterns).unwrap();
         // Bare segment
         assert!(set.is_match(".git"));
         // Nested
@@ -430,7 +410,7 @@ mod tests {
     #[test]
     fn blocked_path_glob_pattern_is_blocked() {
         let patterns = vec!["**/.env".to_owned()];
-        let set = build_glob_set(&patterns).unwrap();
+        let set = glob_utils::build_glob_set(&patterns).unwrap();
         assert!(set.is_match("subdir/.env"));
         assert!(!set.is_match("subdir/app.env")); // different name
     }
@@ -438,7 +418,7 @@ mod tests {
     #[test]
     fn blocked_path_unrelated_path_is_not_blocked() {
         let patterns = vec![".git".to_owned()];
-        let set = build_glob_set(&patterns).unwrap();
+        let set = glob_utils::build_glob_set(&patterns).unwrap();
         assert!(!set.is_match("index.html"));
         assert!(!set.is_match("api/v1/users"));
     }
@@ -446,7 +426,7 @@ mod tests {
     #[test]
     fn empty_blocked_paths_blocks_nothing() {
         let patterns: Vec<String> = vec![];
-        let set = build_glob_set(&patterns).unwrap();
+        let set = glob_utils::build_glob_set(&patterns).unwrap();
         assert!(!set.is_match(".git"));
         assert!(!set.is_match("secret/.env"));
     }
@@ -454,7 +434,7 @@ mod tests {
     #[test]
     fn block_dot_paths_disabled_allows_dot_paths() {
         let patterns = vec![".git".to_owned()];
-        let set = build_glob_set(&patterns).unwrap();
+        let set = glob_utils::build_glob_set(&patterns).unwrap();
         // Test with block_dot_paths disabled in config
         // (This is just verifying the glob set works; actual blocking is tested in integration)
         assert!(set.is_match(".git"));

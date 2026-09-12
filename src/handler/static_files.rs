@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use async_trait::async_trait;
-use globset::{Glob, GlobSet, GlobSetBuilder};
+use globset::GlobSet;
 use hyper::{Request, Response, StatusCode, body::Incoming, header};
 use tokio::io::AsyncReadExt;
 use tracing::{debug, warn};
@@ -10,6 +10,7 @@ use tracing::{debug, warn};
 use crate::compression::negotiate_encoding;
 use crate::config::{PrecompressedEncoding, StaticFilesConfig};
 use crate::error::AppError;
+use crate::glob_utils;
 use crate::handler::{Handler, HandlerResponse, empty_body, stream_body};
 use crate::server::state::AppState;
 
@@ -35,13 +36,13 @@ impl StaticFilesHandler {
             .map_err(|e| anyhow::anyhow!("Cannot canonicalize static root '{}': {}", root, e))?;
 
         // Pre-compile blocked-paths glob set.
-        let blocked_set = build_glob_set(&config.blocked_paths)?;
+        let blocked_set = glob_utils::build_glob_set(&config.blocked_paths)?;
 
         // Pre-compile one GlobSet per cache rule.
         let cache_rule_sets = config
             .cache_rules
             .iter()
-            .map(|rule| build_glob_set(std::slice::from_ref(&rule.pattern)))
+            .map(|rule| glob_utils::build_glob_set(std::slice::from_ref(&rule.pattern)))
             .collect::<anyhow::Result<Vec<_>>>()?;
 
         Ok(Self {
@@ -410,27 +411,6 @@ impl StaticFilesHandler {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-
-/// Build a `GlobSet` from a slice of pattern strings.
-/// Each pattern is matched case-sensitively.  Patterns without a `/` are
-/// automatically treated as path-component substring matches by wrapping them
-/// in `**/<pattern>/**` and `**/<pattern>` forms so that e.g. `".git"` blocks
-/// any path segment named `.git`.
-fn build_glob_set(patterns: &[String]) -> anyhow::Result<GlobSet> {
-    let mut builder = GlobSetBuilder::new();
-    for pattern in patterns {
-        // If the pattern has no path separator and no wildcard, treat it as a
-        // path-component match: block any path that *contains* the segment.
-        if !pattern.contains('/') && !pattern.contains('*') && !pattern.contains('?') {
-            builder.add(Glob::new(&format!("**/{pattern}"))?);
-            builder.add(Glob::new(&format!("**/{pattern}/**"))?);
-            builder.add(Glob::new(pattern)?);
-        } else {
-            builder.add(Glob::new(pattern)?);
-        }
-    }
-    Ok(builder.build()?)
-}
 
 fn detect_mime(path: &Path) -> &'static str {
     mime_guess::from_path(path)
