@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.15.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.0...yahs-v2.15.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* bump bitflags from 2.13.1 to 2.13.2 ([#219](https://github.com/aaronriekenberg/yahs/issues/219)) ([8a03175](https://github.com/aaronriekenberg/yahs/commit/8a031751e019b08c00443be61ad6de4175ab6747))
+* bump smallvec from 1.16.0 to 1.16.1 ([#222](https://github.com/aaronriekenberg/yahs/issues/222)) ([07d6dcc](https://github.com/aaronriekenberg/yahs/commit/07d6dccd6dd96dfc2c8e5f87775605cbc1161ff5))
+* bump toml from 1.1.5+spec-1.1.0 to 1.1.6+spec-1.1.0 ([#220](https://github.com/aaronriekenberg/yahs/issues/220)) ([f4632c3](https://github.com/aaronriekenberg/yahs/commit/f4632c3610ce7aeac1a3aaff64c648650883af6d))
+
 ## [2.15.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.14.0...yahs-v2.15.0) (2026-09-12)
 
 
