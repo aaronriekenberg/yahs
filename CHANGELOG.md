@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.15.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.1...yahs-v2.15.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* bump cc from 1.4.6 to 1.4.7 ([#231](https://github.com/aaronriekenberg/yahs/issues/231)) ([a8d1d77](https://github.com/aaronriekenberg/yahs/commit/a8d1d774326f3c65782f2a4752660387469bc766))
+* bump cfg-if from 1.0.4 to 1.0.5 ([#229](https://github.com/aaronriekenberg/yahs/issues/229)) ([a4c48b9](https://github.com/aaronriekenberg/yahs/commit/a4c48b939b8e7764f8fcf30bb04c71b87be2b10c))
+* bump find-msvc-tools from 0.1.12 to 0.1.13 ([#232](https://github.com/aaronriekenberg/yahs/issues/232)) ([3eb8077](https://github.com/aaronriekenberg/yahs/commit/3eb8077925c6c6845a0346f610f89a3fd1fdc8eb))
+* bump rustix from 1.1.4 to 1.1.5 ([#226](https://github.com/aaronriekenberg/yahs/issues/226)) ([648edc1](https://github.com/aaronriekenberg/yahs/commit/648edc15457aa8fdac771fac5a8b88a65e893d9b))
+* bump syn from 3.0.5 to 3.0.6 ([#227](https://github.com/aaronriekenberg/yahs/issues/227)) ([1e06098](https://github.com/aaronriekenberg/yahs/commit/1e060986f17e8984641d07630d5c341eaad72b9f))
+* bump unicode-ident from 1.0.24 to 1.0.26 ([#228](https://github.com/aaronriekenberg/yahs/issues/228)) ([ca949a3](https://github.com/aaronriekenberg/yahs/commit/ca949a38b2174010652f1efc4edf18d79c118928))
+
 ## [2.15.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.0...yahs-v2.15.1) (2026-09-18)
 
 
