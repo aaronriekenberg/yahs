@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.15.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.2...yahs-v2.15.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* bump hyper-util from 0.1.20 to 0.1.21 ([#234](https://github.com/aaronriekenberg/yahs/issues/234)) ([26c3b2e](https://github.com/aaronriekenberg/yahs/commit/26c3b2ed6cb0b5bab021c13e999801eb7ce95468))
+* bump thiserror from 2.0.20 to 2.0.21 ([#233](https://github.com/aaronriekenberg/yahs/issues/233)) ([8fa5611](https://github.com/aaronriekenberg/yahs/commit/8fa561197c8938d26a27af674fc66df7a6330659))
+
 ## [2.15.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.1...yahs-v2.15.2) (2026-09-22)
 
 
