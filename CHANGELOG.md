@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.15.4](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.3...yahs-v2.15.4) (2026-09-29)
+
+
+### Bug Fixes
+
+* bump cc from 1.4.7 to 1.5.1 ([#238](https://github.com/aaronriekenberg/yahs/issues/238)) ([204fbc3](https://github.com/aaronriekenberg/yahs/commit/204fbc3d45c3a52a5e32706140fa9f4a02ce704e))
+* bump find-msvc-tools from 0.1.13 to 0.1.14 ([#237](https://github.com/aaronriekenberg/yahs/issues/237)) ([411bbb0](https://github.com/aaronriekenberg/yahs/commit/411bbb06c4f5cf0f2370b08797c06a724be07ff5))
+* bump smallvec from 1.16.1 to 1.16.2 ([#236](https://github.com/aaronriekenberg/yahs/issues/236)) ([77a0eab](https://github.com/aaronriekenberg/yahs/commit/77a0eab4c5efa75122250cb271752d77fb9cd855))
+
 ## [2.15.3](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.2...yahs-v2.15.3) (2026-09-28)
 
 
