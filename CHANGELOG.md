@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.15.5](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.4...yahs-v2.15.5) (2026-10-09)
+
+
+### Bug Fixes
+
+* bump cc from 1.4.7 to 1.5.1 ([#242](https://github.com/aaronriekenberg/yahs/issues/242)) ([06dca9e](https://github.com/aaronriekenberg/yahs/commit/06dca9e6b0a273c256d6cbab8cdc09d263cf5918))
+* bump find-msvc-tools from 0.1.13 to 0.1.14 ([#241](https://github.com/aaronriekenberg/yahs/issues/241)) ([5757ca4](https://github.com/aaronriekenberg/yahs/commit/5757ca4501d805f8b7b56c92b14667fef2602095))
+* bump lazy_static from 1.5.0 to 1.5.1 ([#240](https://github.com/aaronriekenberg/yahs/issues/240)) ([217d565](https://github.com/aaronriekenberg/yahs/commit/217d56534245e4e368f4e92998b9f337fa44eda8))
+* bump libc from 0.2.189 to 0.2.190 ([#244](https://github.com/aaronriekenberg/yahs/issues/244)) ([3c84af9](https://github.com/aaronriekenberg/yahs/commit/3c84af9e552ace90bb53d3dcc65bfc4f7fc43b11))
+* bump mio from 1.2.3 to 1.2.4 ([#246](https://github.com/aaronriekenberg/yahs/issues/246)) ([f1380dd](https://github.com/aaronriekenberg/yahs/commit/f1380dd4890f5d7d255beaaee13074f703de1b3b))
+* bump tokio from 1.53.1 to 1.53.2 ([#245](https://github.com/aaronriekenberg/yahs/issues/245)) ([47050e2](https://github.com/aaronriekenberg/yahs/commit/47050e2ffeb5bab376307f5ea6f850e362da3063))
+* bump unicase from 2.9.0 to 2.10.0 ([#247](https://github.com/aaronriekenberg/yahs/issues/247)) ([b52369c](https://github.com/aaronriekenberg/yahs/commit/b52369c8c591feb6c2c478206b04b8970ce5e8d7))
+* bump want from 0.3.1 to 0.3.2 ([#248](https://github.com/aaronriekenberg/yahs/issues/248)) ([4e94e21](https://github.com/aaronriekenberg/yahs/commit/4e94e21ed372ddb7c48ace5bfae0c1025cada668))
+
 ## [2.15.4](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.3...yahs-v2.15.4) (2026-09-29)
 
 
