@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.15.6](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.5...yahs-v2.15.6) (2026-10-15)
+
+
+### Bug Fixes
+
+* bump cc from 1.6.0 to 1.8.0 ([#257](https://github.com/aaronriekenberg/yahs/issues/257)) ([6a19ca0](https://github.com/aaronriekenberg/yahs/commit/6a19ca0c9254939bc3f009ef4e4a4f7a2e5dc89f))
+* bump h2 from 0.4.19 to 0.4.20 ([#253](https://github.com/aaronriekenberg/yahs/issues/253)) ([d25ed2e](https://github.com/aaronriekenberg/yahs/commit/d25ed2e7a80ac747958aa60ce365ca2a0eacfb67))
+* bump hyper from 1.11.1 to 1.12.0 ([#254](https://github.com/aaronriekenberg/yahs/issues/254)) ([2d99de7](https://github.com/aaronriekenberg/yahs/commit/2d99de731f2e15568526af106a5f3a58f711e076))
+* bump serde_json from 1.0.151 to 1.0.154 ([#262](https://github.com/aaronriekenberg/yahs/issues/262)) ([716254c](https://github.com/aaronriekenberg/yahs/commit/716254cc86b5669e72569443b35dd038302545c2))
+* bump serde_spanned from 1.1.1 to 1.1.2 ([#252](https://github.com/aaronriekenberg/yahs/issues/252)) ([5a02362](https://github.com/aaronriekenberg/yahs/commit/5a0236255d231d3effeca87351499ee2f3d89502))
+* bump smallvec from 1.16.2 to 1.16.3 ([#259](https://github.com/aaronriekenberg/yahs/issues/259)) ([8af0be3](https://github.com/aaronriekenberg/yahs/commit/8af0be307053f7fae100a8a0c4783cf6be46c317))
+* bump syn from 3.0.6 to 3.0.8 ([#263](https://github.com/aaronriekenberg/yahs/issues/263)) ([d68a291](https://github.com/aaronriekenberg/yahs/commit/d68a291f68c68f45c5693d523e90dc18e49b8a69))
+* bump tokio-util from 0.7.19 to 0.7.20 ([#261](https://github.com/aaronriekenberg/yahs/issues/261)) ([2710cf7](https://github.com/aaronriekenberg/yahs/commit/2710cf7ed2b5e2440e9695f362984225b7246058))
+* bump toml from 1.1.6+spec-1.1.0 to 1.1.8+spec-1.1.0 ([#251](https://github.com/aaronriekenberg/yahs/issues/251)) ([0427f01](https://github.com/aaronriekenberg/yahs/commit/0427f01e8afb630b337076b26759dce2054e6813))
+* bump toml_datetime from 1.1.1+spec-1.1.0 to 1.1.2+spec-1.1.0 ([#249](https://github.com/aaronriekenberg/yahs/issues/249)) ([624b3ee](https://github.com/aaronriekenberg/yahs/commit/624b3eee7ad9d97a71620e8505458c22df4b19de))
+* bump toml_parser from 1.1.3+spec-1.1.0 to 1.1.5+spec-1.1.0 ([#255](https://github.com/aaronriekenberg/yahs/issues/255)) ([4ebc797](https://github.com/aaronriekenberg/yahs/commit/4ebc797cb32607dfc82101d875252381ce7c0571))
+* bump toml_writer from 1.1.2+spec-1.1.0 to 1.1.3+spec-1.1.0 ([#250](https://github.com/aaronriekenberg/yahs/issues/250)) ([46a504f](https://github.com/aaronriekenberg/yahs/commit/46a504fb370d8f2a89265dff00b7b7f79f9490b1))
+
 ## [2.15.5](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.4...yahs-v2.15.5) (2026-10-09)
 
 
