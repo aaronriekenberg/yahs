@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.7](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.6...yahs-v2.15.7) (2026-10-16)
+
+
+### Bug Fixes
+
+* bump unicode-ident from 1.0.26 to 1.0.27 ([#264](https://github.com/aaronriekenberg/yahs/issues/264)) ([471183e](https://github.com/aaronriekenberg/yahs/commit/471183e4c61dc5154e1cc56d2d869247f972296a))
+
 ## [2.15.6](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.5...yahs-v2.15.6) (2026-10-15)
 
 
