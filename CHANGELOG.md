@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.15.9](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.8...yahs-v2.15.9) (2026-10-30)
+
+
+### Bug Fixes
+
+* bump cc from 1.9.0 to 1.10.0 ([#276](https://github.com/aaronriekenberg/yahs/issues/276)) ([54d1739](https://github.com/aaronriekenberg/yahs/commit/54d17393e3d1a9edaa23bce7cc6508695c231730))
+* bump docker/login-action from 4.6.0 to 4.7.0 ([#273](https://github.com/aaronriekenberg/yahs/issues/273)) ([838e3d3](https://github.com/aaronriekenberg/yahs/commit/838e3d3bae6230778d08c004daf120f3afaf9fb5))
+* bump rustix from 1.1.5 to 1.1.6 ([#277](https://github.com/aaronriekenberg/yahs/issues/277)) ([7b136b9](https://github.com/aaronriekenberg/yahs/commit/7b136b933ebabea129556a900bee89fc74ff9a13))
+* bump smallvec from 1.16.3 to 1.16.4 ([#275](https://github.com/aaronriekenberg/yahs/issues/275)) ([d4f94e9](https://github.com/aaronriekenberg/yahs/commit/d4f94e9167f645c506028eb4e1242c81a7173ea1))
+* bump tokio from 1.53.3 to 1.54.1 ([#272](https://github.com/aaronriekenberg/yahs/issues/272)) ([fff1475](https://github.com/aaronriekenberg/yahs/commit/fff14755e53ae1ec57ccf2b4d9ab9347ac4310e5))
+
 ## [2.15.8](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.7...yahs-v2.15.8) (2026-10-23)
 
 
