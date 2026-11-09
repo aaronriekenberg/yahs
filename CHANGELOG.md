@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.15.10](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.9...yahs-v2.15.10) (2026-11-09)
+
+
+### Bug Fixes
+
+* bump cc from 1.10.0 to 1.11.0 ([#281](https://github.com/aaronriekenberg/yahs/issues/281)) ([9905b48](https://github.com/aaronriekenberg/yahs/commit/9905b489867cf73403c1e72f48daaa9a162eaede))
+* bump docker/login-action from 4.7.0 to 4.8.0 ([#282](https://github.com/aaronriekenberg/yahs/issues/282)) ([eb80771](https://github.com/aaronriekenberg/yahs/commit/eb807714f6dafb06b966558d021a5921e01a00ef))
+* bump globset from 0.4.20 to 0.4.21 ([#278](https://github.com/aaronriekenberg/yahs/issues/278)) ([68e35b7](https://github.com/aaronriekenberg/yahs/commit/68e35b783c1e784a7d4efdbc395365702937b94d))
+* bump log from 0.4.34 to 0.4.35 ([#279](https://github.com/aaronriekenberg/yahs/issues/279)) ([3c522c0](https://github.com/aaronriekenberg/yahs/commit/3c522c0521b32b44711079c6c167ba2983fd4145))
+* bump mime from 0.3.17 to 0.3.18 ([#284](https://github.com/aaronriekenberg/yahs/issues/284)) ([33a6bac](https://github.com/aaronriekenberg/yahs/commit/33a6bac725e054abe1e97c6b99b70db6cf21c5d3))
+* bump toml from 1.1.8+spec-1.1.0 to 1.2.0+spec-1.1.0 ([#283](https://github.com/aaronriekenberg/yahs/issues/283)) ([d37ed80](https://github.com/aaronriekenberg/yahs/commit/d37ed80293569a821cf878d89b36d8692e47310d))
+* bump toml_writer from 1.1.3+spec-1.1.0 to 1.2.0+spec-1.1.0 ([#285](https://github.com/aaronriekenberg/yahs/issues/285)) ([da798cc](https://github.com/aaronriekenberg/yahs/commit/da798cc6eaaea43f1ed58864319bee162c732da0))
+* bump winnow from 1.0.4 to 1.0.5 ([#286](https://github.com/aaronriekenberg/yahs/issues/286)) ([b742058](https://github.com/aaronriekenberg/yahs/commit/b742058cb2bdb6e26273ff85b517a9ac5f6eb4ba))
+
 ## [2.15.9](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.8...yahs-v2.15.9) (2026-10-30)
 
 
