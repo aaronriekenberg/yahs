@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.15.11](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.10...yahs-v2.15.11) (2026-11-13)
+
+
+### Bug Fixes
+
+* bump cc from 1.11.0 to 1.11.1 ([#288](https://github.com/aaronriekenberg/yahs/issues/288)) ([bcb591f](https://github.com/aaronriekenberg/yahs/commit/bcb591f097ca201da67b8abc035f4809907dee3b))
+* bump itoa from 1.0.18 to 1.0.19 ([#293](https://github.com/aaronriekenberg/yahs/issues/293)) ([9970d22](https://github.com/aaronriekenberg/yahs/commit/9970d228f11716d9cc971f7081d9d9f855eb9c06))
+* bump serde_spanned from 1.1.2 to 1.1.3 ([#287](https://github.com/aaronriekenberg/yahs/issues/287)) ([f30fdcc](https://github.com/aaronriekenberg/yahs/commit/f30fdcca241858399c8e8aab2420ea23758a5092))
+* bump smallvec from 1.16.4 to 1.16.5 ([#289](https://github.com/aaronriekenberg/yahs/issues/289)) ([1fa2dc4](https://github.com/aaronriekenberg/yahs/commit/1fa2dc43dc94ff02a195b5f03ed85f8d0527f420))
+* bump syn from 3.0.9 to 3.0.10 ([#294](https://github.com/aaronriekenberg/yahs/issues/294)) ([dd6daaf](https://github.com/aaronriekenberg/yahs/commit/dd6daafc0ab1c1d01bba2653fda93eda0dfe1f30))
+* bump toml from 1.2.0+spec-1.1.0 to 1.2.1+spec-1.1.0 ([#291](https://github.com/aaronriekenberg/yahs/issues/291)) ([7550463](https://github.com/aaronriekenberg/yahs/commit/755046325cea02633ed48fd16237b344d3cc58e6))
+* bump toml_datetime from 1.1.2+spec-1.1.0 to 1.1.3+spec-1.1.0 ([#290](https://github.com/aaronriekenberg/yahs/issues/290)) ([4ce9347](https://github.com/aaronriekenberg/yahs/commit/4ce934778799a62f25f6d4cd65c983dba1a76917))
+
 ## [2.15.10](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.9...yahs-v2.15.10) (2026-11-09)
 
 
