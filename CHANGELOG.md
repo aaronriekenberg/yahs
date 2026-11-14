@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.16.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.11...yahs-v2.16.0) (2026-11-14)
+
+
+### Features
+
+* add cargo-update workflow ([be3520c](https://github.com/aaronriekenberg/yahs/commit/be3520c2abda6821b9b68b1e9dfc87d5a84daabd))
+
+
+### Bug Fixes
+
+* cargo update ([#296](https://github.com/aaronriekenberg/yahs/issues/296)) ([7e5ff43](https://github.com/aaronriekenberg/yahs/commit/7e5ff43258a2df5c8c769f7148b2fda7d5138233))
+
 ## [2.15.11](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.10...yahs-v2.15.11) (2026-11-13)
 
 
