@@ -11,7 +11,7 @@ use yahs::{config, logging, server};
     version,
     about = "yet another http server: a configurable, extensible web server"
 )]
-struct Cli {
+	struct Cli {
     /// Path to the TOML configuration file.
     #[arg(short, long, default_value = "yahs.toml")]
     config: PathBuf,
