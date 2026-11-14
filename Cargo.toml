@@ -11,6 +11,9 @@ path = "src/main.rs"
 name = "yahs"
 path = "src/lib.rs"
 
+[lints.rust]
+unsafe_code = "forbid"
+
 [dependencies]
 anyhow = "1.0.102"
 async-trait = "0.1.89"
