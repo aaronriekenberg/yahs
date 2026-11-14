@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.16.0...yahs-v2.17.0) (2026-11-14)
+
+
+### Features
+
+* break formatting test ([4d9e21d](https://github.com/aaronriekenberg/yahs/commit/4d9e21d47f2fe2950eb59376872b2be3b7b1c3c1))
+* forbid unsafe code ([f9e908c](https://github.com/aaronriekenberg/yahs/commit/f9e908c5ab69d8e829fb5d390811742356ed68d8))
+
 ## [2.16.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.15.11...yahs-v2.16.0) (2026-11-14)
 
 
