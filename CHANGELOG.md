@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.17.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.17.0...yahs-v2.17.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* bump peter-evans/create-pull-request from 7 to 8 ([#298](https://github.com/aaronriekenberg/yahs/issues/298)) ([c1a25f5](https://github.com/aaronriekenberg/yahs/commit/c1a25f5c6b98dbc38285a2516a8236bf34d8441e))
+* cargo update ([#300](https://github.com/aaronriekenberg/yahs/issues/300)) ([b0c3035](https://github.com/aaronriekenberg/yahs/commit/b0c3035565c72fd0322657c7e815337f5f50ba8b))
+* cargo update ([#301](https://github.com/aaronriekenberg/yahs/issues/301)) ([0d860f9](https://github.com/aaronriekenberg/yahs/commit/0d860f9b381890064106b641b2b9978b8929b8b0))
+* cargo update ([#302](https://github.com/aaronriekenberg/yahs/issues/302)) ([6a3e681](https://github.com/aaronriekenberg/yahs/commit/6a3e6812d07d3fea4b1371a4c95e07b77d58654a))
+* cargo update ([#303](https://github.com/aaronriekenberg/yahs/issues/303)) ([80d9442](https://github.com/aaronriekenberg/yahs/commit/80d9442552449e02227b5517ce33272a4a4e2ded))
+
 ## [2.17.0](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.16.0...yahs-v2.17.0) (2026-11-14)
 
 
