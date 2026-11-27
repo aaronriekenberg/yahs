@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.17.2](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.17.1...yahs-v2.17.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* cargo update ([#304](https://github.com/aaronriekenberg/yahs/issues/304)) ([eb560d4](https://github.com/aaronriekenberg/yahs/commit/eb560d426865c6562f820ac18fe6f5e12340e1a5))
+* cargo update ([#306](https://github.com/aaronriekenberg/yahs/issues/306)) ([90bf45b](https://github.com/aaronriekenberg/yahs/commit/90bf45b584232610ab56a1156b4361f1abed2b22))
+* cargo update ([#307](https://github.com/aaronriekenberg/yahs/issues/307)) ([bd28edb](https://github.com/aaronriekenberg/yahs/commit/bd28edb9a0937fed1a91173e0b22fc7c6f79028c))
+* cargo update ([#308](https://github.com/aaronriekenberg/yahs/issues/308)) ([5a6fae3](https://github.com/aaronriekenberg/yahs/commit/5a6fae3e2d8e84c41bdb73ca1b10fa01a5fa943e))
+* cargo update ([#309](https://github.com/aaronriekenberg/yahs/issues/309)) ([77c99c7](https://github.com/aaronriekenberg/yahs/commit/77c99c7e3fa40d9489594e382080b0574afb504a))
+* cargo update ([#310](https://github.com/aaronriekenberg/yahs/issues/310)) ([77ba324](https://github.com/aaronriekenberg/yahs/commit/77ba3249c880b41c65a5bed6f2dbe71ab0f6525b))
+
 ## [2.17.1](https://github.com/aaronriekenberg/yahs/compare/yahs-v2.17.0...yahs-v2.17.1) (2026-11-20)
 
 
